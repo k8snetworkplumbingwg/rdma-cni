@@ -1,0 +1,42 @@
+language: go
+sudo: required
+
+go:
+  - "1.13"
+env:
+  global:
+    - PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+
+script:
+  - make lint
+  - sudo -E env "PATH=$PATH" make test
+  - sudo -E env "PATH=$PATH" make test-coverage
+  - for pkg in `ls test/coverage/*.cover`; do goveralls -coverprofile=$pkg -service=travis-ci; done
+  - make build
+  - make image
+
+before_deploy:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+
+deploy:
+  # Push image to Dockerhub on merge to master
+  - provider: script
+    skip_cleanup: true
+    script: >
+      bash -c '
+      docker push $IMAGE_NAME
+      echo Done'
+    on:
+      branch: master
+  # Push image to Dockerhub on tag
+  - provider: script
+    skip_cleanup: true
+    script: >
+      bash -c '
+      docker tag $IMAGE_NAME $IMAGE_NAME:$TRAVIS_TAG;
+      docker push $IMAGE_NAME:$TRAVIS_TAG;
+      echo Done'
+    on:
+      tags: true
+      all_branches: true
+      condition: "$TRAVIS_TAG =~ ^v[0-9].*$"
