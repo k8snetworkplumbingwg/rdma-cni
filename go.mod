@@ -9,6 +9,7 @@ require (
 	github.com/golang/mock v1.4.1 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
+	github.com/rs/zerolog v1.18.0
 	github.com/spf13/afero v1.2.2
 	github.com/stretchr/testify v1.3.0
 	github.com/vishvananda/netlink v1.1.0

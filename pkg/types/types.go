@@ -6,7 +6,17 @@ import (
 
 type RdmaNetConf struct {
 	types.NetConf
-	DeviceID string `json:"deviceID"` // PCI address of a VF in valid sysfs format
+	DeviceID string  `json:"deviceID"` // PCI address of a VF in valid sysfs format
+	Args     CNIArgs `json:"args"`     // optional arguments passed to CNI as defined in CNI spec 0.2.0
+}
+
+type CNIArgs struct {
+	CNI RdmaCNIArgs `json:"cni"`
+}
+
+type RdmaCNIArgs struct {
+	types.CommonArgs
+	Debug bool `json:"debug"` // Run CNI in debug mode
 }
 
 // RDMA Network state struct version

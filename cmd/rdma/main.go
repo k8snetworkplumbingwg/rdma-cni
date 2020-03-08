@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/Mellanox/rdma-cni/pkg/cache"
 	"github.com/Mellanox/rdma-cni/pkg/rdma"
@@ -15,6 +15,14 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+)
+
+// Sets the initial log level configurations
+// this is overridden by the "debug" CNI arg
+var (
+	logLevel = zerolog.InfoLevel
 )
 
 type NsManager interface {
@@ -49,7 +57,7 @@ func (plugin *rdmaCniPlugin) ensureRdmaSystemMode() error {
 	if err != nil {
 		return fmt.Errorf("failed to get RDMA subsystem namespace awareness mode. %v", err)
 	}
-	log.Printf("INFO: RDMA subsystem mode: %s", mode)
+	log.Debug().Msgf("RDMA subsystem mode: %s", mode)
 	if mode != rdma.RdmaSysModeExclusive {
 		return fmt.Errorf("RDMA subsystem namespace awareness mode is set to %s, "+
 			"expecting it to be set to %s, invalid system configurations", mode, rdma.RdmaSysModeExclusive)
@@ -58,12 +66,12 @@ func (plugin *rdmaCniPlugin) ensureRdmaSystemMode() error {
 }
 
 func (plugin *rdmaCniPlugin) deriveDeviceIdFromResult(result *current.Result) (string, error) {
-	log.Printf("WARNING: DeviceID attribute in network configuration is empty, " +
+	log.Warn().Msgf("DeviceID attribute in network configuration is empty, " +
 		"this may indicated that the delegate plugin is out of date.")
 
 	var deviceID string
 	if len(result.Interfaces) == 1 {
-		log.Printf("INFO: Attempting to derive DeviceID from MAC.")
+		log.Debug().Msgf("Attempting to derive DeviceID from MAC.")
 		deviceID, err := utils.GetVfPciDevFromMAC(result.Interfaces[0].Mac)
 		if err != nil {
 			return deviceID, fmt.Errorf("failed to derive PCI device ID from mac %q. %v", result.Interfaces[0].Mac, err)
@@ -77,26 +85,26 @@ func (plugin *rdmaCniPlugin) deriveDeviceIdFromResult(result *current.Result) (s
 // Parse network configurations
 func (plugin *rdmaCniPlugin) parseConf(data []byte, envArgs string) (*rdmatypes.RdmaNetConf, error) {
 	conf := rdmatypes.RdmaNetConf{}
-	if err := json.Unmarshal(data, &conf); err != nil {
-		return nil, fmt.Errorf("failed to load netconf: %+v", err)
-	}
-	log.Printf("INFO: Network Configuration: %+v", conf)
-
 	// Parse CNI args passed as env variables (not used ATM)
 	if envArgs != "" {
-		commonCniArgs := types.CommonArgs{}
-		err := types.LoadArgs(envArgs, &commonCniArgs)
+		commonCniArgs := &conf.Args.CNI
+		err := types.LoadArgs(envArgs, commonCniArgs)
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("INFO: CNI_ARGS: %+v", commonCniArgs)
+		log.Debug().Msgf("ENV CNI_ARGS: %+v", commonCniArgs)
 	}
+
+	if err := json.Unmarshal(data, &conf); err != nil {
+		return nil, fmt.Errorf("failed to load netconf: %+v", err)
+	}
+	log.Debug().Msgf("Network Configuration: %+v", conf)
 	return &conf, nil
 }
 
 // Move RDMA device to namespace
 func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) error {
-	log.Printf("INFO: moving RDMA device %s to namespace %s", rdmaDev, nsPath)
+	log.Debug().Msgf("moving RDMA device %s to namespace %s", rdmaDev, nsPath)
 
 	targetNs, err := plugin.nsManager.GetNS(nsPath)
 	if err != nil {
@@ -113,7 +121,7 @@ func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) erro
 
 // Move RDMA device from namespace to current (default) namespace
 func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) error {
-	log.Printf("INFO: moving RDMA device %s to namespace %s", rdmaDev, nsPath)
+	log.Debug().Msgf("INFO: moving RDMA device %s from namespace %s to default namespace", rdmaDev, nsPath)
 
 	sourceNs, err := plugin.nsManager.GetNS(nsPath)
 	if err != nil {
@@ -129,7 +137,6 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) er
 
 	err = sourceNs.Do(func(_ ns.NetNS) error {
 		// Move RDMA device to default namespace
-		log.Printf("INFO: cmdDel: Moving rdmaDev %s from container namespace to current namespace", rdmaDev)
 		return plugin.rdmaManager.MoveRdmaDevToNs(rdmaDev, targetNs)
 	})
 	if err != nil {
@@ -139,11 +146,16 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) er
 }
 
 func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
-	log.Printf("INFO: cmdAdd: args: %+v ", args)
+	log.Info().Msgf("RDMA-CNI: cmdAdd")
 	conf, err := plugin.parseConf(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
+	if conf.Args.CNI.Debug {
+		setDebugMode()
+	}
+
+	log.Debug().Msgf("cmdAdd: args: %+v ", args)
 
 	// Ensure RDMA-CNI was called as part of a chain, and parse PrevResult
 	if conf.RawPrevResult == nil {
@@ -156,7 +168,7 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("DEBUG: prev results: %+v", result)
+	log.Debug().Msgf("prev results: %+v", result)
 
 	// Ensure RDMA subsystem mode
 	err = plugin.ensureRdmaSystemMode()
@@ -185,7 +197,6 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 
 	// Move RDMA device to container namespace
 	rdmaDev := rdmaDevs[0]
-	log.Printf("INFO: moving RDMA device %s to namespace %s", rdmaDev, args.Netns)
 
 	err = plugin.moveRdmaDevToNs(rdmaDev, args.Netns)
 	if err != nil {
@@ -211,16 +222,20 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 }
 
 func (plugin *rdmaCniPlugin) CmdCheck(args *skel.CmdArgs) error {
-	log.Printf("INFO: cmdCheck not Implemented. args: %v ", args)
+	log.Info().Msgf("cmdCheck() not Implemented. args: %v ", args)
 	return nil
 }
 
 func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
-	log.Printf("INFO: cmdDel args: %v ", args)
+	log.Info().Msgf("RDMA-CNI: cmdDel")
 	conf, err := plugin.parseConf(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
+	if conf.Args.CNI.Debug {
+		setDebugMode()
+	}
+	log.Debug().Msgf("CmdDel() args: %v ", args)
 
 	// Container already exited, so no Namespace. if no Namespace, we got nothing to clean.
 	// this may happen in Infra containers as described in https://github.com/kubernetes/kubernetes/pull/35240
@@ -245,12 +260,25 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 
 	err = plugin.stateCache.Delete(pRef)
 	if err != nil {
-		log.Printf("WARNING: failed to delete cache entry(%q). %v", pRef, err)
+		log.Warn().Msgf("failed to delete cache entry(%q). %v", pRef, err)
 	}
 	return nil
 }
 
+func setupLogging() {
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		TimeFormat: zerolog.TimeFieldFormat,
+		NoColor:    true})
+}
+
+func setDebugMode() {
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+}
+
 func main() {
+	setupLogging()
 	plugin := rdmaCniPlugin{
 		rdmaManager: rdma.NewRdmaManager(),
 		nsManager:   newNsManager(),
