@@ -11,7 +11,7 @@ RUN apk add --update --virtual build-dependencies build-base linux-headers && \
     make build
 
 FROM alpine
-COPY --from=builder /usr/src/rdma-cni/build/rdma-cni /usr/bin/
+COPY --from=builder /usr/src/rdma-cni/build/rdma /usr/bin/
 WORKDIR /
 
 LABEL io.k8s.display-name="RDMA CNI"

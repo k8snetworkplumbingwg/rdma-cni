@@ -23,7 +23,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: kube-rdma-cni
-          image: adrianchiris/rdma-cni
+          image: Mellanox/rdma-cni
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -67,7 +67,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: kube-rdma-cni
-          image: adrianchiris/rdma-cni:ppc64le
+          image: Mellanox/rdma-cni:ppc64le
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

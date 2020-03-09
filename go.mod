@@ -1,3 +1,3 @@
-module github.com/adrianchiris/rdma-cni
+module github.com/Mellanox/rdma-cni
 
 go 1.13

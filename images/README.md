@@ -5,7 +5,7 @@ This is used for distribution of RDMA CNI binary in a Docker image.
 Typically you'd build this from the root of your RDMA CNI clone, and you'd set the `DOCKERFILE` to specify the Dockerfile during build time, `TAG` to specify the image's tag:
 
 ```
-$ DOCKERFILE=Dockerfile TAG=adrianchiris/rdma-cni make image
+$ DOCKERFILE=Dockerfile TAG=Mellanox/rdma-cni make image
 ```
 
 ---
@@ -27,5 +27,5 @@ Note: The likely best practice here is to build your own image given the Dockerf
 Example docker run command:
 
 ```
-$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh adrianchiris/rdma-cni
+$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh Mellanox/rdma-cni
 ```
