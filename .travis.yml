@@ -3,16 +3,18 @@ sudo: required
 
 go:
   - "1.13"
+
 env:
   global:
     - PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
+before_script:
+  - go get -u github.com/mattn/goveralls
+
 script:
   - make lint
-  - sudo -E env "PATH=$PATH" make test
-  - sudo -E env "PATH=$PATH" make test-coverage
-  - for pkg in `ls test/coverage/*.cover`; do goveralls -coverprofile=$pkg -service=travis-ci; done
-  - make build
+  - make test-coverage
+  - goveralls -coverprofile=rdma-cni.cover -service=travis-ci
   - make image
 
 before_deploy:
