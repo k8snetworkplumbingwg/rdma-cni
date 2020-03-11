@@ -36,7 +36,6 @@ GO      = go
 GOFMT   = gofmt
 GOLINT = $(GOBIN)/golangci-lint
 TIMEOUT = 15
-V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
@@ -77,8 +76,10 @@ $(GOBIN)/goveralls: | $(BASE) ; $(info  building goveralls...)
 
 .PHONY: lint
 lint: | $(BASE) $(GOLINT) ; $(info  running golint...) @ ## Run golint
+	$Q mkdir -p $(BASE)/test
 	$Q cd $(BASE) && ret=0 && \
-		test -z "$$($(GOLINT) run | tee /dev/stderr)" || ret=1 ; \
+		test -z "$$($(GOLINT) run | tee $(BASE)/test/lint.out)" || ret=1 ; \
+		cat $(BASE)/test/lint.out ; rm -rf $(BASE)/test ; \
 	 exit $$ret
 
 TEST_TARGETS := test-default test-bench test-short test-verbose test-race
@@ -110,6 +111,9 @@ test-coverage: fmt lint test-coverage-tools | $(BASE) ; $(info  running coverage
 			-covermode=$(COVERAGE_MODE) \
 			-coverprofile="$(COVERAGE_DIR)/coverage/`echo $$pkg | tr "/" "-"`.cover" $$pkg ;\
 	 done
+	$Q echo "mode: ${COVERAGE_MODE}" > ${PACKAGE}.cover
+	$Q grep -h -v "mode:" $(COVERAGE_DIR)/coverage/*.cover >> ${PACKAGE}.cover
+	$Q rm -rf $(COVERAGE_DIR)/coverage
 
 # Container image
 .PHONY: image
