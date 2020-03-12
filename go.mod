@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Mellanox/rdmamap v0.0.0-20191106181932-7c3c4763a6ee
+	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
 	github.com/golang/mock v1.4.1 // indirect
 	github.com/onsi/ginkgo v1.12.0
