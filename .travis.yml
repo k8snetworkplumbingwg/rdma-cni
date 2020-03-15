@@ -1,5 +1,9 @@
 language: go
-sudo: required
+
+dist: bionic
+
+services:
+  - docker
 
 go:
   - "1.13"
