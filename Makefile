@@ -51,7 +51,7 @@ $(GOBIN):
 $(BUILDDIR): | $(BASE) ; $(info Creating build directory...)
 	@cd $(BASE) && mkdir -p $@
 
-build: $(BUILDDIR)/$(BINARY_NAME) ; $(info Building $(BINARY_NAME)...) ## Build executable file
+build: $(BUILDDIR)/$(BINARY_NAME) ; $(info Building $(BINARY_NAME)...) @ ## Build executable file
 	$(info Done!)
 
 $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
@@ -117,14 +117,14 @@ test-coverage: fmt lint test-coverage-tools | $(BASE) ; $(info  running coverage
 
 # Container image
 .PHONY: image
-image: | $(BASE) ; $(info Building Docker image...)  ## Build conatiner image
+image: | $(BASE) ; $(info Building Docker image...)  @ ## Build conatiner image
 	$(IMAGE_BUILDER) build -t $(TAG) -f $(DOCKERFILE)  $(CURDIR) $(IMAGE_BUILD_OPTS)
 
 
 # Misc
 
 .PHONY: clean
-clean: ; $(info  Cleaning...)	 ## Cleanup everything
+clean: ; $(info  Cleaning...)	 @ ## Cleanup everything
 	@rm -rf $(GOPATH)
 	@rm -rf $(BUILDDIR)
 	@rm -rf  test
