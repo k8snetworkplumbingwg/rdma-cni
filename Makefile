@@ -34,7 +34,11 @@ IMAGE_BUILD_OPTS += $(DOCKERARGS)
 # Go tools
 GO      = go
 GOFMT   = gofmt
-GOLINT = $(GOBIN)/golangci-lint
+GOLANGCI_LINT = $(GOBIN)/golangci-lint
+# golangci-lint version should be updated periodically
+# we keep it fixed to avoid it from unexpectedly failing on the project
+# in case of a version bump
+GOLANGCI_LINT_VER = v1.23.8
 TIMEOUT = 15
 Q = $(if $(filter 1,$V),,@)
 
@@ -65,8 +69,8 @@ fmt: ; $(info  running gofmt...) @ ## Run gofmt on all source files
 		$(GOFMT) -l -w $$d/*.go || ret=$$? ; \
 	 done ; exit $$ret
 
-$(GOLINT): | $(BASE) ; $(info  building golangci-lint...)
-	$Q go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+$(GOLANGCI_LINT): | $(BASE) ; $(info  building golangci-lint...)
+	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VER)
 
 GOVERALLS = $(GOBIN)/goveralls
 $(GOBIN)/goveralls: | $(BASE) ; $(info  building goveralls...)
@@ -75,10 +79,10 @@ $(GOBIN)/goveralls: | $(BASE) ; $(info  building goveralls...)
 # Tests
 
 .PHONY: lint
-lint: | $(BASE) $(GOLINT) ; $(info  running golint...) @ ## Run golint
+lint: | $(BASE) $(GOLANGCI_LINT) ; $(info  running golangci-lint...) @ ## Run golangci-lint
 	$Q mkdir -p $(BASE)/test
 	$Q cd $(BASE) && ret=0 && \
-		test -z "$$($(GOLINT) run | tee $(BASE)/test/lint.out)" || ret=1 ; \
+		test -z "$$($(GOLANGCI_LINT) run | tee $(BASE)/test/lint.out)" || ret=1 ; \
 		cat $(BASE)/test/lint.out ; rm -rf $(BASE)/test ; \
 	 exit $$ret
 
