@@ -2,15 +2,18 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-rdma-cni-ds-amd64
+  name: kube-rdma-cni-ds
   namespace: kube-system
   labels:
     tier: node
     app: rdma-cni
+    name: rdma-cni
 spec:
   selector:
     matchLabels:
       name: rdma-cni
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -18,64 +21,12 @@ spec:
         app: rdma-cni
         name: rdma-cni
     spec:
-      hostNetwork: true
-      nodeSelector:
-        beta.kubernetes.io/arch: amd64
       tolerations:
-        - key: node-role.kubernetes.io/master
-          operator: Exists
+        - operator: Exists
           effect: NoSchedule
       containers:
-        - name: kube-rdma-cni
-          image: Mellanox/rdma-cni
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "50Mi"
-            limits:
-              cpu: "100m"
-              memory: "50Mi"
-          volumeMounts:
-            - name: cnibin
-              mountPath: /host/opt/cni/bin
-      volumes:
-        - name: cnibin
-          hostPath:
-            path: /opt/cni/bin
-
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: kube-rdma-cni-ds-ppc64le
-  namespace: kube-system
-  labels:
-    tier: node
-    app: rdma-cni
-spec:
-  selector:
-    matchLabels:
-      name: rdma-cni
-  template:
-    metadata:
-      labels:
-        tier: node
-        app: rdma-cni
-        name: rdma-cni
-    spec:
-      hostNetwork: true
-      nodeSelector:
-        beta.kubernetes.io/arch: ppc64le
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          operator: Exists
-          effect: NoSchedule
-      containers:
-        - name: kube-rdma-cni
-          image: Mellanox/rdma-cni:ppc64le
+        - name: rdma-cni
+          image: mellanox/rdma-cni
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

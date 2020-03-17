@@ -5,7 +5,7 @@ set -e
 
 # Set known directories.
 CNI_BIN_DIR="/host/opt/cni/bin"
-RDMA_CNI_BIN_FILE="/usr/bin/rdma-cni"
+RDMA_CNI_BIN_FILE="/usr/bin/rdma"
 
 # Give help text for parameters.
 usage()

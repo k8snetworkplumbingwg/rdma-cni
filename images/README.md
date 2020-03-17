@@ -5,7 +5,7 @@ This is used for distribution of RDMA CNI binary in a Docker image.
 Typically you'd build this from the root of your RDMA CNI clone, and you'd set the `DOCKERFILE` to specify the Dockerfile during build time, `TAG` to specify the image's tag:
 
 ```
-$ DOCKERFILE=Dockerfile TAG=Mellanox/rdma-cni make image
+$ DOCKERFILE=Dockerfile TAG=mellanox/rdma-cni make image
 ```
 
 ---
@@ -18,7 +18,7 @@ You may wish to deploy RDMA CNI as a daemonset, you can do so by starting with t
 $ kubectl create -f ../deployment/rdma-cni-daemonset.yaml
 ```
 
-Note: The likely best practice here is to build your own image given the Dockerfile, and then push it to your preferred registry, and change the `image` fields in the Daemonset YAML to reference that image.
+> __*Note:*__ The likely best practice here is to build your own image given the Dockerfile, and then push it to your preferred registry, and change the `image` fields in the Daemonset YAML to reference that image.
 
 ---
 
@@ -27,5 +27,7 @@ Note: The likely best practice here is to build your own image given the Dockerf
 Example docker run command:
 
 ```
-$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh Mellanox/rdma-cni
+$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh mellanox/rdma-cni
 ```
+
+> __*Note:*__ `/opt/cni/bin` is assumed to be the CNI directory where CNI compliant executables are located.
