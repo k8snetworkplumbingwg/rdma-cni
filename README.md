@@ -79,7 +79,6 @@ Set RDMA subsystem namespace awareness mode to `exclusive`
 ```console
 ~$ kubectl apply -f ./deployment/rdma-cni-daemonset.yaml
 ```
-> __*Note:*__ On Kubernetes version Pre 1.16 use `./deployment/rdma-cni-daemonset-pre-1.16.yaml` instead.
 
 ## Deploy workload
 Pod definition can be found in the example below.
