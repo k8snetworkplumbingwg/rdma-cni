@@ -65,14 +65,15 @@ func (plugin *rdmaCniPlugin) ensureRdmaSystemMode() error {
 	return nil
 }
 
-func (plugin *rdmaCniPlugin) deriveDeviceIdFromResult(result *current.Result) (string, error) {
+func (plugin *rdmaCniPlugin) deriveDeviceIDFromResult(result *current.Result) (string, error) {
 	log.Warn().Msgf("DeviceID attribute in network configuration is empty, " +
 		"this may indicated that the delegate plugin is out of date.")
 
 	var deviceID string
+	var err error
 	if len(result.Interfaces) == 1 {
 		log.Debug().Msgf("Attempting to derive DeviceID from MAC.")
-		deviceID, err := utils.GetVfPciDevFromMAC(result.Interfaces[0].Mac)
+		deviceID, err = utils.GetVfPciDevFromMAC(result.Interfaces[0].Mac)
 		if err != nil {
 			return deviceID, fmt.Errorf("failed to derive PCI device ID from mac %q. %v", result.Interfaces[0].Mac, err)
 		}
@@ -161,7 +162,7 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	if conf.RawPrevResult == nil {
 		return fmt.Errorf("RDMA-CNI is expected to be called as part of a plugin chain")
 	}
-	if err := version.ParsePrevResult(&conf.NetConf); err != nil {
+	if err = version.ParsePrevResult(&conf.NetConf); err != nil {
 		return err
 	}
 	result, err := current.NewResultFromResult(conf.PrevResult)
@@ -179,7 +180,7 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	// Delegate plugin may not add Device ID to the network configuration, if so,
 	// attempt to derive it from PrevResult Mac address with some sysfs voodoo
 	if conf.DeviceID == "" {
-		if conf.DeviceID, err = plugin.deriveDeviceIdFromResult(result); err != nil {
+		if conf.DeviceID, err = plugin.deriveDeviceIDFromResult(result); err != nil {
 			return err
 		}
 	}

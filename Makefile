@@ -33,7 +33,6 @@ IMAGE_BUILD_OPTS += $(DOCKERARGS)
 
 # Go tools
 GO      = go
-GOFMT   = gofmt
 GOLANGCI_LINT = $(GOBIN)/golangci-lint
 # golangci-lint version should be updated periodically
 # we keep it fixed to avoid it from unexpectedly failing on the project
@@ -43,7 +42,7 @@ TIMEOUT = 15
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: fmt lint build
+all: lint build
 
 $(BASE): ; $(info  setting GOPATH...)
 	@mkdir -p $(dir $@)
@@ -62,12 +61,6 @@ $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
 	@cd $(BASE)/cmd/$(BINARY_NAME) && CGO_ENABLED=0 $(GO) build -o $(BUILDDIR)/$(BINARY_NAME) -tags no_openssl -v
 
 # Tools
-
-.PHONY: fmt
-fmt: ; $(info  running gofmt...) @ ## Run gofmt on all source files
-	@ret=0 && for d in $$($(GO) list -f '{{.Dir}}' ./... | grep -v /vendor/); do \
-		$(GOFMT) -l -w $$d/*.go || ret=$$? ; \
-	 done ; exit $$ret
 
 $(GOLANGCI_LINT): | $(BASE) ; $(info  building golangci-lint...)
 	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VER)
@@ -94,10 +87,10 @@ test-verbose: ARGS=-v            ## Run tests in verbose mode with coverage repo
 test-race:    ARGS=-race         ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
-check test tests: fmt lint | $(BASE) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests
+check test tests: lint | $(BASE) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests
 	$Q cd $(BASE) && $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
-test-xml: fmt lint | $(BASE) $(GO2XUNIT) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests with xUnit output
+test-xml: lint | $(BASE) $(GO2XUNIT) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests with xUnit output
 	$Q cd $(BASE) && 2>&1 $(GO) test -timeout 20s -v $(TESTPKGS) | tee test/tests.output
 	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
 
@@ -105,7 +98,7 @@ COVERAGE_MODE = count
 .PHONY: test-coverage test-coverage-tools
 test-coverage-tools: | $(GOVERALLS)
 test-coverage: COVERAGE_DIR := $(CURDIR)/test
-test-coverage: fmt lint test-coverage-tools | $(BASE) ; $(info  running coverage tests...) @ ## Run coverage tests
+test-coverage: lint test-coverage-tools | $(BASE) ; $(info  running coverage tests...) @ ## Run coverage tests
 	$Q mkdir -p $(COVERAGE_DIR)/coverage
 	$Q cd $(BASE) && for pkg in $(TESTPKGS); do \
 		$(GO) test \

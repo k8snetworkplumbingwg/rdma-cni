@@ -3,14 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/containernetworking/plugins/pkg/ns"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
+	"github.com/containernetworking/plugins/pkg/ns"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/Mellanox/rdma-cni/pkg/cache"
 	cacheMocks "github.com/Mellanox/rdma-cni/pkg/cache/mocks"
@@ -38,7 +38,7 @@ func generateNetConfCmdDel(netName string) rdmaTypes.RdmaNetConf {
 func generateNetConfCmdAdd(netName string, cIfname string, deviceID string) rdmaTypes.RdmaNetConf {
 	prevResult := current.Result{
 		CNIVersion: "0.4.0",
-		Interfaces: []*current.Interface{&current.Interface{
+		Interfaces: []*current.Interface{{
 			Name:    cIfname,
 			Mac:     "42:86:24:84:4f:b1",
 			Sandbox: "/proc/1/ns/net",
@@ -66,8 +66,8 @@ func generateNetConfCmdAdd(netName string, cIfname string, deviceID string) rdma
 	}
 }
 
-func generateArgs(nsPath string, cid string, cIfname string, netconf rdmaTypes.RdmaNetConf) skel.CmdArgs {
-	bytes, _ := json.Marshal(netconf)
+func generateArgs(nsPath string, cid string, cIfname string, netconf *rdmaTypes.RdmaNetConf) skel.CmdArgs {
+	bytes, _ := json.Marshal(*netconf)
 	return skel.CmdArgs{
 		ContainerID: cid,
 		Netns:       nsPath,
@@ -183,7 +183,7 @@ var _ = Describe("Main", func() {
 		})
 		Context("Bad flow", func() {
 			It("Should fail", func() {
-				retErr := fmt.Errorf("error occured")
+				retErr := fmt.Errorf("error occurred")
 				rdmaMgrMock.On("MoveRdmaDevToNs", mock.AnythingOfType("string"), mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
 				err := plugin.moveRdmaDevToNs("mlx5_5", "/proc/666/ns/net")
 				Expect(err).To(HaveOccurred())
@@ -206,7 +206,7 @@ var _ = Describe("Main", func() {
 		})
 		Context("Bad flow", func() {
 			It("Should fail", func() {
-				retErr := fmt.Errorf("error occured")
+				retErr := fmt.Errorf("error occurred")
 				rdmaMgrMock.On("MoveRdmaDevToNs", mock.AnythingOfType("string"), mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
 				err := plugin.moveRdmaDevFromNs("mlx5_5", "/proc/666/ns/net")
 				Expect(err).To(HaveOccurred())
@@ -226,7 +226,7 @@ var _ = Describe("Main", func() {
 				cnsPath := "/proc/12444/ns/net"
 				cns, _ := dummyNsMgr.GetNS(cnsPath)
 				netconf := generateNetConfCmdAdd(netName, cIfname, pciDev)
-				args := generateArgs(cnsPath, cid, cIfname, netconf)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
 				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{rdmaDev}, nil)
 				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
@@ -239,7 +239,7 @@ var _ = Describe("Main", func() {
 				stateCacheMock.AssertExpectations(t)
 			})
 		})
-		//TODO(adrian):	Add additional tests to cover bad flows / differen network configurations
+		// TODO(adrian): Add additional tests to cover bad flows / differen network configurations
 	})
 
 	Describe("Test CmdDel()", func() {
@@ -254,7 +254,7 @@ var _ = Describe("Main", func() {
 				cns, _ := dummyNsMgr.GetCurrentNS()
 				rdmaState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
 				netconf := generateNetConfCmdDel(netName)
-				args := generateArgs(cnsPath, cid, cIfname, netconf)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
 				stateCacheMock.On("Load", mock.AnythingOfType("cache.StateRef"),
 					mock.AnythingOfType("*types.RdmaNetState")).Return(nil).Run(func(args mock.Arguments) {
@@ -269,7 +269,7 @@ var _ = Describe("Main", func() {
 				stateCacheMock.AssertExpectations(t)
 			})
 		})
-		//TODO(adrian):	Add additional tests to cover bad flows / different network configurations
+		// TODO(adrian): Add additional tests to cover bad flows / different network configurations
 	})
 
 	Describe("Test CmdCheck()", func() {

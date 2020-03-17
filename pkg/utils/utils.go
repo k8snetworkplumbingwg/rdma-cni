@@ -12,7 +12,10 @@ import (
 // this method compares with administrative MAC for SRIOV configured net devices
 // TODO: move this method to github: Mellanox/sriovnet
 func GetVfPciDevFromMAC(mac string) (string, error) {
-	links, err := netlink.LinkList()
+	var err error
+	var links []netlink.Link
+	var vfPath string
+	links, err = netlink.LinkList()
 	if err != nil {
 		return "", err
 	}
@@ -21,7 +24,7 @@ func GetVfPciDevFromMAC(mac string) (string, error) {
 		if len(link.Attrs().Vfs) > 0 {
 			for _, vf := range link.Attrs().Vfs {
 				if vf.Mac.String() == mac {
-					vfPath, err := filepath.EvalSymlinks(fmt.Sprintf("/sys/class/net/%s/device/virtfn%d", link.Attrs().Name, vf.ID))
+					vfPath, err = filepath.EvalSymlinks(fmt.Sprintf("/sys/class/net/%s/device/virtfn%d", link.Attrs().Name, vf.ID))
 					if err == nil {
 						matchDevs = append(matchDevs, path.Base(vfPath))
 					}
