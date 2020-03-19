@@ -46,7 +46,7 @@ func (sc *FsStateCache) Save(ref StateRef, state interface{}) error {
 		return err
 	}
 
-	if err := sc.fsOps.MkdirAll(sc.basePath, 0700); err != nil {
+	if err = sc.fsOps.MkdirAll(sc.basePath, 0700); err != nil {
 		return fmt.Errorf("failed to create data cache directory(%q): %v", sc.basePath, err)
 	}
 
