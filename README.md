@@ -15,7 +15,7 @@ provided network interface to the container's network namespace path.
 
 The main use-case (for now...) is for containerized SR-IOV workloads orchestrated by [Kubernetes](https://kubernetes.io/)
 that perform [RDMA](https://community.mellanox.com/s/article/what-is-rdma-x) and wish to  leverage network namespace
-isolation of RDMA devices introduced in linux kernel `5.2.0`.
+isolation of RDMA devices introduced in linux kernel `5.3.0`.
 
 # Requirements
 
@@ -31,12 +31,15 @@ ConnectX®-4 and above
 Linux distribution
 
 ### Kernel
-Kernel based on `5.2.0` or newer, RDMA modules loaded in the system.
+Kernel based on `5.3.0` or newer, RDMA modules loaded in the system.
 [`rdma-core`](https://github.com/linux-rdma/rdma-core) package provides means to automatically load relevant modules
 on system start.
 
+> __*Note:*__ For deployments that use Mellanox out-of-tree driver (Mellanox OFED), Mellanox OFED version `4.7` or newer
+>is required
+
 ### Pacakges
-[`iproute2`](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) package based on kernel `5.2.0` or newer
+[`iproute2`](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) package based on kernel `5.3.0` or newer
 installed on the system.
 
 > __*Note:*__ it is recommended that the required packages are installed by your system's package manager.
