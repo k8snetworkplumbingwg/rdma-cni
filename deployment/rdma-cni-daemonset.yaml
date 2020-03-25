@@ -21,6 +21,7 @@ spec:
         app: rdma-cni
         name: rdma-cni
     spec:
+      hostNetwork: true
       tolerations:
         - operator: Exists
           effect: NoSchedule
