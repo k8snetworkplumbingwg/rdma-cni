@@ -42,7 +42,9 @@ on system start.
 [`iproute2`](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) package based on kernel `5.3.0` or newer
 installed on the system.
 
-> __*Note:*__ it is recommended that the required packages are installed by your system's package manager.
+> __*Note:*__ It is recommended that the required packages are installed by your system's package manager.
+
+> __*Note:*__ For deployments using Mellanox OFED, `iproute2` package is bundled with the driver under `/opt/mellanox/iproute2/`
 
 ## Deployment requirements (Kubernetes)
 Please refer to the relevant link on how to deploy each component.
