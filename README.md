@@ -54,7 +54,6 @@ For a Kubernetes deployment, each SR-IOV capable worker node should have:
 - [Multus CNI](https://github.com/intel/multus-cni) `v3.4.1` or newer deployed and configured
 - Per fabric SR-IOV supporting CNI deployed
     - __Ethernet__: [SR-IOV CNI](https://github.com/intel/sriov-cni)
-    - __Infiniband__: [Infiniband SR-IOV CNI](https://github.com/Mellanox/ib-sriov-cni)
 
 > __*Note:*__: Kubernetes version 1.16 or newer is required for deploying as daemonset
 
