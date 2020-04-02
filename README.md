@@ -194,3 +194,32 @@ For small deployments (e.g a kubernetes test cluster/AIO K8s deployment) you can
 ```console
 ~$ make image
 ```
+
+# Limitations
+## Ethernet
+### RDMA workloads utilizing RDMA Connection Manager (CM)
+For Mellanox Hardware, due to kernel limitation, it is required to pre-allocate MACs for all VFs in the deployment
+if an RDMA workload wishes to utilize RMDA CM to establish connection.
+
+This is done in the following manner:
+
+__Set VF administrative MAC address :__
+
+```
+$ ip link set <pf-netdev> vf <vf-index> mac <mac-address>
+```
+
+__Unbind/Bind VF driver :__
+
+```
+$ echo <vf-pci-address> > /sys/bus/pci/drivers/mlx5_core/unbind
+$ echo <vf-pci-address> > /sys/bus/pci/drivers/mlx5_core/bind
+```
+
+__Example:__
+```
+$ ip link set enp4s0f0 vf 3 mac 02:03:00:00:48:56
+$ echo 0000:03:00.5 > /sys/bus/pci/drivers/mlx5_core/unbind
+$ echo 0000:03:00.5 > /sys/bus/pci/drivers/mlx5_core/bind
+```
+Doing so will populate the VF's node and pord GUID required for RDMA CM to establish connection.
