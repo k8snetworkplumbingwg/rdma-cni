@@ -98,19 +98,8 @@ COVERAGE_MODE = count
 .PHONY: test-coverage test-coverage-tools
 test-coverage-tools: | $(GOVERALLS)
 test-coverage: COVERAGE_DIR := $(CURDIR)/test
-test-coverage: lint test-coverage-tools | $(BASE) ; $(info  running coverage tests...) @ ## Run coverage tests
-	$Q mkdir -p $(COVERAGE_DIR)/coverage
-	$Q cd $(BASE) && for pkg in $(TESTPKGS); do \
-		$(GO) test \
-			-coverpkg=$$($(GO) list -f '{{ join .Deps "\n" }}' $$pkg | \
-					grep '^$(PACKAGE)/' | grep -v '^$(PACKAGE)/vendor/' | \
-					tr '\n' ',')$$pkg \
-			-covermode=$(COVERAGE_MODE) \
-			-coverprofile="$(COVERAGE_DIR)/coverage/`echo $$pkg | tr "/" "-"`.cover" $$pkg ;\
-	 done
-	$Q echo "mode: ${COVERAGE_MODE}" > ${PACKAGE}.cover
-	$Q grep -h -v "mode:" $(COVERAGE_DIR)/coverage/*.cover >> ${PACKAGE}.cover
-	$Q rm -rf $(COVERAGE_DIR)/coverage
+test-coverage: test-coverage-tools | $(BASE) ; $(info  running coverage tests...) @ ## Run coverage tests
+	$Q cd $(BASE); $(GO) test -covermode=$(COVERAGE_MODE) -coverprofile=rdma-cni.cover ./...
 
 # Container image
 .PHONY: image
