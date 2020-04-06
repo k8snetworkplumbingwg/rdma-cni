@@ -10,7 +10,7 @@ before_script:
   - go get -u github.com/mattn/goveralls
 
 script:
-  - make lint
+  - make test
   - make test-coverage
   - goveralls -coverprofile=rdma-cni.cover -service=travis-ci
   - make image
