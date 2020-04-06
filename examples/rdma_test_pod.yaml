@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: rdma-test-pod
+  annotations:
+    k8s.v1.cni.cncf.io/networks: sriov-rdma-net
+spec:
+# Uncomment for all in one K8s deployment
+#  tolerations:
+#    - key: node-role.kubernetes.io/master
+#      operator: Exists
+#      effect: NoSchedule
+  containers:
+    - name: rdma-app
+      image: centos/tools
+      imagePullPolicy: IfNotPresent
+      command: [ "/bin/bash", "-c", "--" ]
+      args: [ "while true; do sleep 300000; done;" ]
+      resources:
+        requests:
+          mellanox.com/sriov_rdma: '1'
+        limits:
+          mellanox.com/sriov_rdma: '1'
