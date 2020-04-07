@@ -11,12 +11,16 @@ type RdmaBasicOps interface {
 	RdmaLinkByName(name string) (*netlink.RdmaLink, error)
 	// Equivalent to netlink.RdmaLinkSetNsFd(...)
 	RdmaLinkSetNsFd(link *netlink.RdmaLink, fd uint32) error
+	// Equivalent to netlink.RdmaLinkSetName(...)
+	RdmaLinkSetName(link *netlink.RdmaLink, name string) error
 	// Equivalent to netlink.RdmaSystemGetNetnsMode(...)
 	RdmaSystemGetNetnsMode() (string, error)
 	// Equivalent to netlink.RdmaSystemSetNetnsMode(...)
 	RdmaSystemSetNetnsMode(newMode string) error
 	// Equivalent to rdmamap.GetRdmaDevicesForPcidev(...)
 	GetRdmaDevicesForPcidev(pcidevName string) []string
+	// Equivalent to netlink.RdmaLinkList()
+	GetRdmaLinkList() ([]*netlink.RdmaLink, error)
 }
 
 func newRdmaBasicOps() RdmaBasicOps {
@@ -36,6 +40,11 @@ func (rdma *rdmaBasicOpsImpl) RdmaLinkSetNsFd(link *netlink.RdmaLink, fd uint32)
 	return netlink.RdmaLinkSetNsFd(link, fd)
 }
 
+// Equivalent to netlink.RdmaLinkSetName(...)
+func (rdma *rdmaBasicOpsImpl) RdmaLinkSetName(link *netlink.RdmaLink, name string) error {
+	return netlink.RdmaLinkSetName(link, name)
+}
+
 // Equivalent to netlink.RdmaSystemGetNetnsMode(...)
 func (rdma *rdmaBasicOpsImpl) RdmaSystemGetNetnsMode() (string, error) {
 	return netlink.RdmaSystemGetNetnsMode()
@@ -49,4 +58,9 @@ func (rdma *rdmaBasicOpsImpl) RdmaSystemSetNetnsMode(newMode string) error {
 // Equivalent to rdmamap.GetRdmaDevicesForPcidev(...)
 func (rdma *rdmaBasicOpsImpl) GetRdmaDevicesForPcidev(pcidevName string) []string {
 	return rdmamap.GetRdmaDevicesForPcidev(pcidevName)
+}
+
+// Equivalent to netlink.RdmaLinkList()
+func (rdma *rdmaBasicOpsImpl) GetRdmaLinkList() ([]*netlink.RdmaLink, error) {
+	return netlink.RdmaLinkList()
 }
