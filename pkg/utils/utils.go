@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/vishvananda/netlink"
 )
@@ -44,4 +46,52 @@ func GetVfPciDevFromMAC(mac string) (string, error) {
 		err = fmt.Errorf("found more than one VF PCI device matching provided administrative mac address")
 	}
 	return dev, err
+}
+
+// Get RDMA device prefix and index. e.g for mlx5_3: prefix is mlx5 and index is 3
+// Note: the index is not related to the kernel RDMA device index
+func getRdmaDevNamePrefixIndex(rdmaDev string) (prefix string, idx uint64, err error) {
+	s := strings.Split(rdmaDev, `_`)
+	if len(s) != 2 {
+		return "", 0, fmt.Errorf("unexpeded RDMA device format: %s", rdmaDev)
+	}
+	prefix = s[0]
+	idx, err = strconv.ParseUint(s[1], 0, 32)
+	if err != nil {
+		err = fmt.Errorf("failed to parse RDMA device index: %s, %v", rdmaDev, err)
+	}
+	return prefix, idx, err
+}
+
+func getRdmaDevIndexFromName(rdmaDev string) (uint64, error) {
+	_, idx, err := getRdmaDevNamePrefixIndex(rdmaDev)
+	return idx, err
+}
+
+// Get the next RDMA device name for a given RDMA device prefix
+func GetNextRdmaDeviceName(prefix string, currDevs []string) (string, error) {
+	var nextDevIdx uint64
+	nextDevIdx = 0
+	if len(currDevs) != 0 {
+		for _, dev := range currDevs {
+			if !strings.HasPrefix(dev, prefix) {
+				continue
+			}
+			// extract index
+			idx, err := getRdmaDevIndexFromName(dev)
+			if err != nil {
+				return "", err
+			}
+			if idx > nextDevIdx {
+				nextDevIdx = idx + 1
+			}
+		}
+	}
+	return fmt.Sprintf("%s_%d", prefix, nextDevIdx), nil
+}
+
+// Get RDMA device driver prefix. e.g for mlx5_3 the prefix would be mlx5
+func GetRdmaDevicePrefix(rdmaDev string) (string, error) {
+	prefix, _, err := getRdmaDevNamePrefixIndex(rdmaDev)
+	return prefix, err
 }

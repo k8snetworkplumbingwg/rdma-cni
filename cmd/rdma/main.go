@@ -3,12 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-
 	"github.com/Mellanox/rdma-cni/pkg/cache"
 	"github.com/Mellanox/rdma-cni/pkg/rdma"
 	rdmatypes "github.com/Mellanox/rdma-cni/pkg/types"
 	"github.com/Mellanox/rdma-cni/pkg/utils"
+	"os"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -103,9 +102,11 @@ func (plugin *rdmaCniPlugin) parseConf(data []byte, envArgs string) (*rdmatypes.
 	return &conf, nil
 }
 
-// Move RDMA device to namespace
-func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) error {
-	log.Debug().Msgf("moving RDMA device %s to namespace %s", rdmaDev, nsPath)
+// Move RDMA device, sRdmaDev, to namespace and rename RDMA device to cRdmadev
+func (plugin *rdmaCniPlugin) moveRdmaDevToNs(sRdmaDev string, cRdmaDev string, nsPath string) error {
+	log.Debug().Msgf("Moving RDMA device %s to namespace %s", sRdmaDev, nsPath)
+	var err error
+	renameReq := sRdmaDev != cRdmaDev
 
 	targetNs, err := plugin.nsManager.GetNS(nsPath)
 	if err != nil {
@@ -113,16 +114,51 @@ func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) erro
 	}
 	defer targetNs.Close()
 
-	err = plugin.rdmaManager.MoveRdmaDevToNs(rdmaDev, targetNs)
-	if err != nil {
-		return fmt.Errorf("failed to move RDMA device %s to namespace. %v", rdmaDev, err)
+	tmpName := sRdmaDev
+	if renameReq {
+		// set temp name for RDMA dev
+		tmpName, err = plugin.rdmaManager.SetRdmaDevTempName(sRdmaDev)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil {
+				log.Warn().Msgf("Error occured while moving RDMA device to namespace. %v", err)
+				restoreErr := plugin.rdmaManager.SetRdmaDevName(tmpName, sRdmaDev)
+				if restoreErr != nil {
+					log.Warn().Msgf("Failed to restore RDMA device name. %v", restoreErr)
+				}
+			}
+		}()
 	}
-	return nil
+
+	err = plugin.rdmaManager.MoveRdmaDevToNs(tmpName, targetNs)
+	if err != nil {
+		return fmt.Errorf("failed to move RDMA device %s to namespace. %v", tmpName, err)
+	}
+
+	if renameReq {
+		// rename RDMA dev in container NS to target name
+		err = targetNs.Do(func(hostNs ns.NetNS) error {
+			renameErr := plugin.rdmaManager.SetRdmaDevName(tmpName, cRdmaDev)
+			if renameErr != nil {
+				// move RDMA device back to host namespace.
+				restoreErr := plugin.rdmaManager.MoveRdmaDevToNs(tmpName, hostNs)
+				if restoreErr != nil {
+					log.Warn().Msgf("Failed to move RDMA device to default namespace after error. %v", restoreErr)
+				}
+			}
+			return renameErr
+		})
+	}
+	return err
 }
 
-// Move RDMA device from namespace to current (default) namespace
-func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) error {
-	log.Debug().Msgf("INFO: moving RDMA device %s from namespace %s to default namespace", rdmaDev, nsPath)
+// Move RDMA device, cRdmaDev, from namespace to current (default) namespace and rename it to sRdmaDev
+func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(cRdmaDev string, sRdmaDev string, nsPath string) error {
+	log.Debug().Msgf("Moving RDMA device %s from namespace %s to default namespace", cRdmaDev, nsPath)
+	var err error
+	renameReq := cRdmaDev != sRdmaDev
 
 	sourceNs, err := plugin.nsManager.GetNS(nsPath)
 	if err != nil {
@@ -136,14 +172,63 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) er
 	}
 	defer targetNs.Close()
 
+	var tmpName string
 	err = sourceNs.Do(func(_ ns.NetNS) error {
-		// Move RDMA device to default namespace
-		return plugin.rdmaManager.MoveRdmaDevToNs(rdmaDev, targetNs)
+		if renameReq {
+			// Move RDMA device to default namespace
+			var sourceNsError error
+			tmpName, sourceNsError = plugin.rdmaManager.SetRdmaDevTempName(cRdmaDev)
+			if sourceNsError != nil {
+				log.Warn().Msgf("Failed to restore RDMA device name to its original value. %v", sourceNsError)
+				return plugin.rdmaManager.MoveRdmaDevToNs(cRdmaDev, targetNs)
+			}
+		}
+		return plugin.rdmaManager.MoveRdmaDevToNs(tmpName, targetNs)
 	})
 	if err != nil {
-		return fmt.Errorf("failed to move RDMA device %s to default namespace. %v", rdmaDev, err)
+		return fmt.Errorf("failed to move RDMA device %s to default namespace. %v", cRdmaDev, err)
+	}
+	if renameReq {
+		// set target name
+		err = targetNs.Do(func(_ ns.NetNS) error {
+			return plugin.rdmaManager.SetRdmaDevName(tmpName, sRdmaDev)
+		})
 	}
 	return err
+}
+
+func (plugin *rdmaCniPlugin) getContainerRdmaDeviceName(sRdmaDev string, nsPath string) string {
+	var err error
+	var sourceNs ns.NetNS
+	sourceNs, err = plugin.nsManager.GetNS(nsPath)
+	defer sourceNs.Close()
+	defer func() {
+		if err != nil {
+			log.Warn().Msgf("Failed to generate container RDMA device name, %s. Original name will be used.", err)
+		}
+	}()
+
+	var cRdmaDevs []string
+	err = sourceNs.Do(func(_ ns.NetNS) error {
+		var cErr error
+		cRdmaDevs, cErr = plugin.rdmaManager.GetRdmaDeviceList()
+		return cErr
+	})
+	if err != nil {
+		return sRdmaDev
+	}
+
+	var prefix string
+	prefix, err = utils.GetRdmaDevicePrefix(sRdmaDev)
+	if err != nil {
+		return sRdmaDev
+	}
+
+	cNextRdmaDev, err := utils.GetNextRdmaDeviceName(prefix, cRdmaDevs)
+	if err != nil {
+		return sRdmaDev
+	}
+	return cNextRdmaDev
 }
 
 func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
@@ -197,25 +282,26 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// Move RDMA device to container namespace
-	rdmaDev := rdmaDevs[0]
+	sRdmaDev := rdmaDevs[0]
+	cRdmaDev := plugin.getContainerRdmaDeviceName(sRdmaDev, args.Netns)
+	log.Debug().Msgf("Sandbox RDMA device: %s, Container RDMA device: %s", sRdmaDev, cRdmaDev)
 
-	err = plugin.moveRdmaDevToNs(rdmaDev, args.Netns)
+	err = plugin.moveRdmaDevToNs(sRdmaDev, cRdmaDev, args.Netns)
 	if err != nil {
-		return fmt.Errorf("failed to move RDMA device %s to namespace. %v", rdmaDev, err)
+		return fmt.Errorf("failed to move RDMA device %s to namespace. %v", sRdmaDev, err)
 	}
-
 	// Save RDMA state
 	state := rdmatypes.NewRdmaNetState()
 	state.DeviceID = conf.DeviceID
-	state.SandboxRdmaDevName = rdmaDev
-	state.ContainerRdmaDevName = rdmaDev
+	state.SandboxRdmaDevName = sRdmaDev
+	state.ContainerRdmaDevName = cRdmaDev
 	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
 	err = plugin.stateCache.Save(pRef, &state)
 	if err != nil {
 		// Move RDMA dev back to current namespace
-		restoreErr := plugin.moveRdmaDevFromNs(state.ContainerRdmaDevName, args.Netns)
+		restoreErr := plugin.moveRdmaDevFromNs(state.ContainerRdmaDevName, state.SandboxRdmaDevName, args.Netns)
 		if restoreErr != nil {
-			return fmt.Errorf("save to cache failed %v, failed while restoring namespace for RDMA device %s. %v", err, rdmaDev, restoreErr)
+			return fmt.Errorf("save to cache failed %v, failed while restoring namespace for RDMA device %s. %v", err, sRdmaDev, restoreErr)
 		}
 		return err
 	}
@@ -249,11 +335,12 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
 	err = plugin.stateCache.Load(pRef, &rdmaState)
 	if err != nil {
-		return err
+		log.Warn().Msgf("Failed to load state from cache, %v. preceding cmdAdd operation may have failed early.", err)
+		return nil
 	}
 
 	// Move RDMA device to default namespace
-	err = plugin.moveRdmaDevFromNs(rdmaState.ContainerRdmaDevName, args.Netns)
+	err = plugin.moveRdmaDevFromNs(rdmaState.ContainerRdmaDevName, rdmaState.SandboxRdmaDevName, args.Netns)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to restore RDMA device %s to default namespace. %v", rdmaState.ContainerRdmaDevName, err)
