@@ -46,7 +46,7 @@ func newNsManager() NsManager {
 }
 
 type rdmaCniPlugin struct {
-	rdmaManager rdma.RdmaManager
+	rdmaManager rdma.Manager
 	nsManager   NsManager
 	stateCache  cache.StateCache
 }
@@ -104,7 +104,7 @@ func (plugin *rdmaCniPlugin) parseConf(data []byte, envArgs string) (*rdmatypes.
 }
 
 // Move RDMA device to namespace
-func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) error {
+func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev, nsPath string) error {
 	log.Debug().Msgf("moving RDMA device %s to namespace %s", rdmaDev, nsPath)
 
 	targetNs, err := plugin.nsManager.GetNS(nsPath)
@@ -121,7 +121,7 @@ func (plugin *rdmaCniPlugin) moveRdmaDevToNs(rdmaDev string, nsPath string) erro
 }
 
 // Move RDMA device from namespace to current (default) namespace
-func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) error {
+func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev, nsPath string) error {
 	log.Debug().Msgf("INFO: moving RDMA device %s from namespace %s to default namespace", rdmaDev, nsPath)
 
 	sourceNs, err := plugin.nsManager.GetNS(nsPath)
@@ -148,7 +148,9 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev string, nsPath string) er
 
 func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	log.Info().Msgf("RDMA-CNI: cmdAdd")
-	conf, err := plugin.parseConf(args.StdinData, args.Args)
+	var err error
+	var conf *rdmatypes.RdmaNetConf
+	conf, err = plugin.parseConf(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
@@ -162,7 +164,8 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	if conf.RawPrevResult == nil {
 		return fmt.Errorf("RDMA-CNI is expected to be called as part of a plugin chain")
 	}
-	if err = version.ParsePrevResult(&conf.NetConf); err != nil {
+	err = version.ParsePrevResult(&conf.NetConf)
+	if err != nil {
 		return err
 	}
 	result, err := current.NewResultFromResult(conf.PrevResult)
@@ -215,7 +218,9 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 		// Move RDMA dev back to current namespace
 		restoreErr := plugin.moveRdmaDevFromNs(state.ContainerRdmaDevName, args.Netns)
 		if restoreErr != nil {
-			return fmt.Errorf("save to cache failed %v, failed while restoring namespace for RDMA device %s. %v", err, rdmaDev, restoreErr)
+			return fmt.Errorf(
+				"save to cache failed %v, failed while restoring namespace for RDMA device %s. %v",
+				err, rdmaDev, restoreErr)
 		}
 		return err
 	}

@@ -35,7 +35,7 @@ func generateNetConfCmdDel(netName string) rdmaTypes.RdmaNetConf {
 	}
 }
 
-func generateNetConfCmdAdd(netName string, cIfname string, deviceID string) rdmaTypes.RdmaNetConf {
+func generateNetConfCmdAdd(netName, cIfname, deviceID string) rdmaTypes.RdmaNetConf {
 	prevResult := current.Result{
 		CNIVersion: "0.4.0",
 		Interfaces: []*current.Interface{{
@@ -66,7 +66,7 @@ func generateNetConfCmdAdd(netName string, cIfname string, deviceID string) rdma
 	}
 }
 
-func generateArgs(nsPath string, cid string, cIfname string, netconf *rdmaTypes.RdmaNetConf) skel.CmdArgs {
+func generateArgs(nsPath, cid, cIfname string, netconf *rdmaTypes.RdmaNetConf) skel.CmdArgs {
 	bytes, _ := json.Marshal(*netconf)
 	return skel.CmdArgs{
 		ContainerID: cid,
@@ -78,7 +78,7 @@ func generateArgs(nsPath string, cid string, cIfname string, netconf *rdmaTypes.
 	}
 }
 
-func generateRdmaNetState(deviceID string, sanboxRdmaDev string, containerRdmaDev string) rdmaTypes.RdmaNetState {
+func generateRdmaNetState(deviceID, sanboxRdmaDev, containerRdmaDev string) rdmaTypes.RdmaNetState {
 	state := rdmaTypes.NewRdmaNetState()
 	state.DeviceID = deviceID
 	state.SandboxRdmaDevName = sanboxRdmaDev
@@ -184,7 +184,10 @@ var _ = Describe("Main", func() {
 		Context("Bad flow", func() {
 			It("Should fail", func() {
 				retErr := fmt.Errorf("error occurred")
-				rdmaMgrMock.On("MoveRdmaDevToNs", mock.AnythingOfType("string"), mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
+				rdmaMgrMock.On(
+					"MoveRdmaDevToNs",
+					mock.AnythingOfType("string"),
+					mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
 				err := plugin.moveRdmaDevToNs("mlx5_5", "/proc/666/ns/net")
 				Expect(err).To(HaveOccurred())
 				rdmaMgrMock.AssertExpectations(t)
@@ -207,7 +210,9 @@ var _ = Describe("Main", func() {
 		Context("Bad flow", func() {
 			It("Should fail", func() {
 				retErr := fmt.Errorf("error occurred")
-				rdmaMgrMock.On("MoveRdmaDevToNs", mock.AnythingOfType("string"), mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
+				rdmaMgrMock.On("MoveRdmaDevToNs",
+					mock.AnythingOfType("string"),
+					mock.AnythingOfType("*main.dummyNetNs")).Return(retErr)
 				err := plugin.moveRdmaDevFromNs("mlx5_5", "/proc/666/ns/net")
 				Expect(err).To(HaveOccurred())
 				rdmaMgrMock.AssertExpectations(t)

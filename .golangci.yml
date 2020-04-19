@@ -1,6 +1,6 @@
 linters-settings:
   dupl:
-    threshold: 100
+    threshold: 150
   funlen:
     lines: 100
     statements: 50
@@ -21,8 +21,8 @@ linters-settings:
       - whyNoLint
       - wrapperFunc
       - unnamedResult
-  gocyclo:
-    min-complexity: 15
+  gocognit:
+    min-complexity: 30
   goimports:
     local-prefixes: github.com/Mellanox/rdma-cni
   golint:
@@ -34,12 +34,20 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/rs/zerolog/zerolog.Event).Msgf
   lll:
-    line-length: 140
-  maligned:
-    suggest-new: true
+    line-length: 120
   misspell:
     locale: US
+  prealloc:
+    # Report preallocation suggestions only on simple loops that have no returns/breaks/continues/gotos in them.
+    # True by default.
+    simple: true
+    range-loops: true # Report preallocation suggestions on range loops, true by default
+    for-loops: false # Report preallocation suggestions on for loops, false by default
 
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
@@ -52,24 +60,24 @@ linters:
     - dogsled
     - dupl
     - errcheck
-    #- funlen - need to fix errors
+    - funlen
     - gochecknoinits
-    #- goconst - need to fix errors
-    #- gocritic - need to fix errors
-    - gocyclo
+    - goconst
+    - gocritic
+    - gocognit
     - gofmt
     - goimports
-    #- golint - need to fix errors
-    #- gomnd
+    - golint 
+    - gomnd
     - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    #- lll - need to fix errors
+    - lll
     - misspell
     - nakedret
+    - prealloc
     - rowserrcheck
     - scopelint
     - staticcheck
@@ -82,16 +90,13 @@ linters:
     - varcheck
     - whitespace
 
-  # don't enable:
-  # - gochecknoglobals
-  # - gocognit
-  # - godox
-  # - maligned
-  # - prealloc
-
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     - path: _test\.go
+      linters:
+        - gomnd
+        - goconst
+    - text: "Magic number: 1"
       linters:
         - gomnd

@@ -23,7 +23,7 @@ func (dns *dummyNetNs) Fd() uintptr {
 
 var _ = Describe("Rdma Manager", func() {
 	var (
-		rdmaManager RdmaManager
+		rdmaManager Manager
 		rdmaOpsMock mocks.RdmaBasicOps
 		t           GinkgoTInterface
 	)

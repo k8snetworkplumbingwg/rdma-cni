@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	// By default, used for caching CNI network state
+	// CacheDir is used By default for caching CNI network state
 	CacheDir = "/var/lib/cni/rdma"
 )
 
@@ -35,7 +35,7 @@ type FsStateCache struct {
 	fsOps    FileSystemOps
 }
 
-func (sc *FsStateCache) GetStateRef(network string, cid string, ifname string) StateRef {
+func (sc *FsStateCache) GetStateRef(network, cid, ifname string) StateRef {
 	return StateRef(strings.Join([]string{network, cid, ifname}, "-"))
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 // Interface to be used by RDMA manager for basic operations
-type RdmaBasicOps interface {
+type BasicOps interface {
 	// Equivalent to netlink.RdmaLinkByName(...)
 	RdmaLinkByName(name string) (*netlink.RdmaLink, error)
 	// Equivalent to netlink.RdmaLinkSetNsFd(...)
@@ -19,7 +19,7 @@ type RdmaBasicOps interface {
 	GetRdmaDevicesForPcidev(pcidevName string) []string
 }
 
-func newRdmaBasicOps() RdmaBasicOps {
+func newRdmaBasicOps() BasicOps {
 	return &rdmaBasicOpsImpl{}
 }
 

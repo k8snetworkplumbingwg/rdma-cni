@@ -23,7 +23,8 @@ var _ = Describe("Cache - Simple marshall-able state-object cache", func() {
 	Describe("Get State reference", func() {
 		Context("Basic call", func() {
 			It("Should return <network>-<cid>-<ifname>", func() {
-				Expect(stateCache.GetStateRef("myNet", "containerUniqueIdentifier", "net1")).To(BeEquivalentTo("myNet-containerUniqueIdentifier-net1"))
+				Expect(stateCache.GetStateRef("myNet", "containerUniqueIdentifier", "net1")).To(
+					BeEquivalentTo("myNet-containerUniqueIdentifier-net1"))
 			})
 		})
 	})
