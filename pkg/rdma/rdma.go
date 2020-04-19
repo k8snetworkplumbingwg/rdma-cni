@@ -11,11 +11,11 @@ const (
 	RdmaSysModeShared    = "shared"
 )
 
-func NewRdmaManager() RdmaManager {
+func NewRdmaManager() Manager {
 	return &rdmaManagerNetlink{rdmaOps: newRdmaBasicOps()}
 }
 
-type RdmaManager interface {
+type Manager interface {
 	// Move RDMA device from current network namespace to network namespace
 	MoveRdmaDevToNs(rdmaDev string, netNs ns.NetNS) error
 	// Get RDMA devices associated with the given PCI device in D:B:D.f format e.g 0000:04:00.0
@@ -27,7 +27,7 @@ type RdmaManager interface {
 }
 
 type rdmaManagerNetlink struct {
-	rdmaOps RdmaBasicOps
+	rdmaOps BasicOps
 }
 
 // Move RDMA device to network namespace
