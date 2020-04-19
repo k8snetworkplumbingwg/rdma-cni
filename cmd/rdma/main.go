@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/Mellanox/rdma-cni/pkg/cache"
 	"github.com/Mellanox/rdma-cni/pkg/rdma"
@@ -24,6 +25,14 @@ import (
 var (
 	logLevel = zerolog.InfoLevel
 )
+
+//nolint:gochecknoinits
+func init() {
+	// this ensures that main runs only on main thread (thread group leader).
+	// since namespace ops (unshare, setns) are done for a single thread, we
+	// must ensure that the goroutine does not jump from OS thread to thread
+	runtime.LockOSThread()
+}
 
 type NsManager interface {
 	GetNS(string) (ns.NetNS, error)
