@@ -5,11 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Mellanox/rdma-cni/pkg/cache"
-	"github.com/Mellanox/rdma-cni/pkg/rdma"
-	rdmatypes "github.com/Mellanox/rdma-cni/pkg/types"
-	"github.com/Mellanox/rdma-cni/pkg/utils"
-
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
@@ -17,6 +12,11 @@ import (
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/Mellanox/rdma-cni/pkg/cache"
+	"github.com/Mellanox/rdma-cni/pkg/rdma"
+	rdmatypes "github.com/Mellanox/rdma-cni/pkg/types"
+	"github.com/Mellanox/rdma-cni/pkg/utils"
 )
 
 // Sets the initial log level configurations
