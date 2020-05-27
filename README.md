@@ -127,8 +127,8 @@ data:
         {
            "resourcePrefix": "mellanox.com",
            "resourceName": "sriov_rdma",
-           "isRdma": true,
            "selectors": {
+               "isRdma": true,
                "vendors": ["15b3"],
                "pfNames": ["enp4s0f0"]
            }
