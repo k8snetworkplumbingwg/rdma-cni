@@ -111,6 +111,7 @@ image: | $(BASE) ; $(info Building Docker image...)  @ ## Build conatiner image
 
 .PHONY: clean
 clean: ; $(info  Cleaning...)	 @ ## Cleanup everything
+	@$(GO) clean -modcache
 	@rm -rf $(GOPATH)
 	@rm -rf $(BUILDDIR)
 	@rm -rf  test
