@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
-	"github.com/containernetworking/cni/pkg/version"
+	cniversion "github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -23,6 +24,12 @@ import (
 // this is overridden by the "debug" CNI arg
 var (
 	logLevel = zerolog.InfoLevel
+)
+
+var (
+	version = "master@git"
+	commit  = "unknown commit"
+	date    = "unknown date"
 )
 
 type NsManager interface {
@@ -164,7 +171,7 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	if conf.RawPrevResult == nil {
 		return fmt.Errorf("RDMA-CNI is expected to be called as part of a plugin chain")
 	}
-	err = version.ParsePrevResult(&conf.NetConf)
+	err = cniversion.ParsePrevResult(&conf.NetConf)
 	if err != nil {
 		return err
 	}
@@ -283,12 +290,29 @@ func setDebugMode() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 }
 
+func printVersionString() string {
+	return fmt.Sprintf("rdma-cni cni version:%s, commit:%s, date:%s", version, commit, date)
+}
+
 func main() {
+	// Init command line flags to clear vendor packages' flags, especially in init()
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	// add version flag
+	versionOpt := false
+	flag.BoolVar(&versionOpt, "version", false, "Show application version")
+	flag.BoolVar(&versionOpt, "v", false, "Show application version")
+	flag.Parse()
+	if versionOpt {
+		fmt.Printf("%s\n", printVersionString())
+		return
+	}
+
 	setupLogging()
 	plugin := rdmaCniPlugin{
 		rdmaManager: rdma.NewRdmaManager(),
 		nsManager:   newNsManager(),
 		stateCache:  cache.NewStateCache(),
 	}
-	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel, version.All, "")
+	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel, cniversion.All, "")
 }
