@@ -13,4 +13,5 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/vishvananda/netlink v1.1.0
 	golang.org/x/sys v0.0.0-20200327173247-9dae0f8f5775 // indirect
+	golang.org/x/text v0.3.3 // indirect
 )
