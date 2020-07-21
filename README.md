@@ -79,6 +79,8 @@ Set RDMA subsystem namespace awareness mode to `exclusive`
 ~$ rdma system set netns exclusive
 ```
 
+> __*Note:*__ When changing RDMA subsystem netns mode, kernel requires that no network namespaces to exist in the system.
+
 ## Deploy RDMA CNI
 ```console
 ~$ kubectl apply -f ./deployment/rdma-cni-daemonset.yaml
