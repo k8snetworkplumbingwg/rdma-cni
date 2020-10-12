@@ -36,7 +36,7 @@ Kernel based on `5.3.0` or newer, RDMA modules loaded in the system.
 on system start.
 
 > __*Note:*__ For deployments that use Mellanox out-of-tree driver (Mellanox OFED), Mellanox OFED version `4.7` or newer
->is required
+>is required. In this case it is not required to use a Kernel based on `5.3.0` or newer.
 
 ### Pacakges
 [`iproute2`](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) package based on kernel `5.3.0` or newer
