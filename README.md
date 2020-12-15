@@ -74,7 +74,14 @@ For a Kubernetes deployment, each SR-IOV capable worker node should have:
 # Deployment
 
 ## System configuration
-Set RDMA subsystem namespace awareness mode to `exclusive`
+It is recommended to set RDMA subsystem namespace awareness mode to `exclusive` on OS boot.
+
+Set RDMA subsystem namespace awareness mode to `exclusive` via `ib_core` module parameter:
+```console
+~$ echo "options ib_core netns_mode=0" >> /etc/modporbe.d/ib_core.conf
+```
+
+Set RDMA subsystem namespace awareness mode to `exclusive` via rdma tool:
 ```console
 ~$ rdma system set netns exclusive
 ```
