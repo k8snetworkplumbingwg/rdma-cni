@@ -78,7 +78,7 @@ It is recommended to set RDMA subsystem namespace awareness mode to `exclusive` 
 
 Set RDMA subsystem namespace awareness mode to `exclusive` via `ib_core` module parameter:
 ```console
-~$ echo "options ib_core netns_mode=0" >> /etc/modporbe.d/ib_core.conf
+~$ echo "options ib_core netns_mode=0" >> /etc/modprobe.d/ib_core.conf
 ```
 
 Set RDMA subsystem namespace awareness mode to `exclusive` via rdma tool:
