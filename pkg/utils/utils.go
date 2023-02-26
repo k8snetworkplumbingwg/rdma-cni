@@ -22,9 +22,10 @@ func GetVfPciDevFromMAC(mac string) (string, error) {
 	matchDevs := []string{}
 	for _, link := range links {
 		if len(link.Attrs().Vfs) > 0 {
-			for _, vf := range link.Attrs().Vfs {
-				if vf.Mac.String() == mac {
-					vfPath, err = filepath.EvalSymlinks(fmt.Sprintf("/sys/class/net/%s/device/virtfn%d", link.Attrs().Name, vf.ID))
+			for i := range link.Attrs().Vfs {
+				if link.Attrs().Vfs[i].Mac.String() == mac {
+					vfPath, err = filepath.EvalSymlinks(
+						fmt.Sprintf("/sys/class/net/%s/device/virtfn%d", link.Attrs().Name, link.Attrs().Vfs[i].ID))
 					if err == nil {
 						matchDevs = append(matchDevs, path.Base(vfPath))
 					}

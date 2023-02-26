@@ -46,12 +46,14 @@ func (sc *FsStateCache) Save(ref StateRef, state interface{}) error {
 		return err
 	}
 
+	//nolint:gomnd
 	if err = sc.fsOps.MkdirAll(sc.basePath, 0700); err != nil {
 		return fmt.Errorf("failed to create data cache directory(%q): %v", sc.basePath, err)
 	}
 
 	path := filepath.Join(sc.basePath, sRef)
 
+	//nolint:gomnd
 	err = sc.fsOps.WriteFile(path, bytes, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write cache data in the path(%q): %v", path, err)
