@@ -10,6 +10,10 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.cover
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Folders
+.gopath/
+.idea/
+bin/
+build/
