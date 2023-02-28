@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/afero"
@@ -13,9 +12,9 @@ func newFsOps() FileSystemOps {
 
 // interface consolidating all file system operations
 type FileSystemOps interface {
-	// Eqivalent to ioutil.ReadFile(...)
+	// Eqivalent to os.ReadFile(...)
 	ReadFile(filename string) ([]byte, error)
-	// Eqivalent to ioutil.WriteFile(...)
+	// Eqivalent to os.WriteFile(...)
 	WriteFile(filename string, data []byte, perm os.FileMode) error
 	// Eqivalent to os.MkdirAll(...)
 	MkdirAll(path string, perm os.FileMode) error
@@ -28,11 +27,11 @@ type FileSystemOps interface {
 type stdFileSystemOps struct{}
 
 func (sfs *stdFileSystemOps) ReadFile(filename string) ([]byte, error) {
-	return ioutil.ReadFile(filename)
+	return os.ReadFile(filename)
 }
 
 func (sfs *stdFileSystemOps) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	return ioutil.WriteFile(filename, data, perm)
+	return os.WriteFile(filename, data, perm)
 }
 
 func (sfs *stdFileSystemOps) MkdirAll(path string, perm os.FileMode) error {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/current"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	cniversion "github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/rs/zerolog"
@@ -314,5 +314,6 @@ func main() {
 		nsManager:   newNsManager(),
 		stateCache:  cache.NewStateCache(),
 	}
-	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel, cniversion.All, "")
+	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel,
+		cniversion.PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0"), "")
 }
