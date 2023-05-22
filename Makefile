@@ -1,7 +1,7 @@
 # Package related
 BINARY_NAME=rdma
 PACKAGE=rdma-cni
-ORG_PATH=github.com/Mellanox
+ORG_PATH=github.com/k8snetworkplumbingwg
 REPO_PATH=$(ORG_PATH)/$(PACKAGE)
 GOPATH=$(CURDIR)/.gopath
 GOBIN =$(CURDIR)/bin
@@ -24,7 +24,7 @@ LDFLAGS="-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE
 IMAGE_BUILDER?=@docker
 IMAGEDIR=$(BASE)/images
 DOCKERFILE?=$(CURDIR)/Dockerfile
-TAG?=mellanox/rdma-cni
+TAG?=ghcr.io/k8snetworkplumbingwg/rdma-cni
 IMAGE_BUILD_OPTS?=
 # Accept proxy settings for docker
 # To pass proxy for Docker invoke it as 'make image HTTP_POXY=http://192.168.0.1:8080'

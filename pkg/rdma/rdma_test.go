@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/vishvananda/netlink"
 
-	"github.com/Mellanox/rdma-cni/pkg/rdma/mocks"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/rdma/mocks"
 )
 
 type dummyNetNs struct {

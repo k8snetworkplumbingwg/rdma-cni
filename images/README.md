@@ -5,7 +5,7 @@ This is used for distribution of RDMA CNI binary in a Docker image.
 Typically you'd build this from the root of your RDMA CNI clone, and you'd set the `DOCKERFILE` to specify the Dockerfile during build time, `TAG` to specify the image's tag:
 
 ```
-$ DOCKERFILE=Dockerfile TAG=mellanox/rdma-cni make image
+$ DOCKERFILE=Dockerfile TAG=ghcr.io/k8snetworkplumbingwg/rdma-cni make image
 ```
 
 ---
@@ -27,7 +27,7 @@ $ kubectl create -f ../deployment/rdma-cni-daemonset.yaml
 Example docker run command:
 
 ```
-$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh mellanox/rdma-cni
+$ docker run -it -v /opt/cni/bin/:/host/opt/cni/bin/ --entrypoint=/bin/sh ghcr.io/k8snetworkplumbingwg/rdma-cni
 ```
 
 > __*Note:*__ `/opt/cni/bin` is assumed to be the CNI directory where CNI compliant executables are located.
