@@ -1,7 +1,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Mellanox/rdma-cni)](https://goreportcard.com/report/github.com/Mellanox/rdma-cni)
+[![Go Report Card](https://goreportcard.com/badge/github.com/k8snetworkplumbingwg/rdma-cni)](https://goreportcard.com/report/github.com/k8snetworkplumbingwg/rdma-cni)
 [![Build Status](https://travis-ci.com/Mellanox/rdma-cni.svg?branch=master)](https://travis-ci.com/Mellanox/rdma-cni)
-[![Coverage Status](https://coveralls.io/repos/github/Mellanox/rdma-cni/badge.svg)](https://coveralls.io/github/Mellanox/rdma-cni)
+[![Coverage Status](https://coveralls.io/repos/github/k8snetworkplumbingwg/rdma-cni/badge.svg)](https://coveralls.io/github/Mellanox/rdma-cni)
 
 # RDMA CNI plugin
 CNI compliant plugin for network namespace aware RDMA interfaces.
@@ -185,7 +185,7 @@ to avoid potential build related issues during development (newer version will m
 
 ### Build from source
 ```console
-~$ git clone https://github.com/Mellanox/rdma-cni.git
+~$ git clone https://github.com/k8snetworkplumbingwg/rdma-cni.git
 ~$ cd rdma-cni
 ~$ make
 ```

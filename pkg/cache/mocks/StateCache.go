@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	cache "github.com/Mellanox/rdma-cni/pkg/cache"
+	cache "github.com/k8snetworkplumbingwg/rdma-cni/pkg/cache"
 	mock "github.com/stretchr/testify/mock"
 )
 

@@ -4,7 +4,7 @@ go:
   - "1.13"
 
 env:
-  - IMAGE_NAME=mellanox/rdma-cni
+  - IMAGE_NAME=ghcr.io/k8snetworkplumbingwg/rdma-cni
 
 before_script:
   - go get -u github.com/mattn/goveralls

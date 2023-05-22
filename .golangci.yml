@@ -24,7 +24,7 @@ linters-settings:
   gocognit:
     min-complexity: 30
   goimports:
-    local-prefixes: github.com/Mellanox/rdma-cni
+    local-prefixes: github.com/k8snetworkplumbingwg/rdma-cni
   gomnd:
     settings:
       mnd:

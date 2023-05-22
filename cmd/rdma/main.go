@@ -14,10 +14,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/Mellanox/rdma-cni/pkg/cache"
-	"github.com/Mellanox/rdma-cni/pkg/rdma"
-	rdmatypes "github.com/Mellanox/rdma-cni/pkg/types"
-	"github.com/Mellanox/rdma-cni/pkg/utils"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/cache"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/rdma"
+	rdmatypes "github.com/k8snetworkplumbingwg/rdma-cni/pkg/types"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/utils"
 )
 
 // Sets the initial log level configurations

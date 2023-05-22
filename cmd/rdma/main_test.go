@@ -12,11 +12,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/Mellanox/rdma-cni/pkg/cache"
-	cacheMocks "github.com/Mellanox/rdma-cni/pkg/cache/mocks"
-	"github.com/Mellanox/rdma-cni/pkg/rdma"
-	rdmaMocks "github.com/Mellanox/rdma-cni/pkg/rdma/mocks"
-	rdmaTypes "github.com/Mellanox/rdma-cni/pkg/types"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/cache"
+	cacheMocks "github.com/k8snetworkplumbingwg/rdma-cni/pkg/cache/mocks"
+	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/rdma"
+	rdmaMocks "github.com/k8snetworkplumbingwg/rdma-cni/pkg/rdma/mocks"
+	rdmaTypes "github.com/k8snetworkplumbingwg/rdma-cni/pkg/types"
 )
 
 func generateNetConfCmdDel(netName string) rdmaTypes.RdmaNetConf {

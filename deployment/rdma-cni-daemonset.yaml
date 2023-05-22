@@ -27,7 +27,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: rdma-cni
-          image: mellanox/rdma-cni
+          image: ghcr.io/k8snetworkplumbingwg/rdma-cni
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

@@ -1,4 +1,4 @@
-module github.com/Mellanox/rdma-cni
+module github.com/k8snetworkplumbingwg/rdma-cni
 
 go 1.19
 
