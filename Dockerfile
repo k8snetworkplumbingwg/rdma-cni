@@ -1,21 +1,21 @@
 FROM golang:alpine as builder
 
-ADD . /usr/src/rdma-cni
+COPY . /usr/src/rdma-cni
 
 ENV HTTP_PROXY $http_proxy
 ENV HTTPS_PROXY $https_proxy
 
-RUN apk add --update --virtual build-dependencies build-base && \
-    cd /usr/src/rdma-cni && \
+WORKDIR /usr/src/rdma-cni
+RUN apk add --no-cache --virtual build-dependencies build-base=~0.5 && \
     make clean && \
     make build
 
-FROM alpine
+FROM alpine:3
 COPY --from=builder /usr/src/rdma-cni/build/rdma /usr/bin/
 WORKDIR /
 
 LABEL io.k8s.display-name="RDMA CNI"
 
-ADD ./images/entrypoint.sh /
+COPY ./images/entrypoint.sh /
 
 ENTRYPOINT ["/entrypoint.sh"]
