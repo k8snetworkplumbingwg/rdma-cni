@@ -9,7 +9,7 @@ on:
       - v*
 jobs:
   build-and-push-amd64-rdma-cni:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: image push AMD64
     steps:
       - name: check out the repo
@@ -44,7 +44,7 @@ jobs:
           file: ./Dockerfile
 
   build-and-push-arm64-rdma-cni:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: image push ARM64
     steps:
       - name: check out the repo
@@ -78,7 +78,7 @@ jobs:
           file: ./Dockerfile.arm64
 
   build-and-push-ppc64le-rdma-cni:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: image push ppc64le
     steps:
       - name: check out the repo
@@ -112,7 +112,7 @@ jobs:
           file: ./Dockerfile.ppc64le
 
   push-manifest:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [build-and-push-amd64-rdma-cni,build-and-push-amr64-rdma-cni,build-and-push-ppc64le-rdma-cni]
     steps:
     - name: set up Docker Buildx
