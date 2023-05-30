@@ -7,7 +7,7 @@ PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR =$(PROJECT_DIR)/bin
 BUILDDIR=$(PROJECT_DIR)/build
 GOFILES=$(shell find . -name *.go | grep -vE "(\/vendor\/)|(_test.go)")
-PKGS=$(or $(PKG),$(shell cd $(PROJECT_DIR) && go list ./... | grep -v "^$(PACKAGE)/vendor/"))
+PKGS=$(or $(PKG),$(shell cd $(PROJECT_DIR) && go list ./... | grep -v "^$(PACKAGE)/vendor/" | grep -v ".*/mocks"))
 TESTPKGS = $(shell go list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
 
 # Version
@@ -103,7 +103,7 @@ COVERAGE_MODE = set
 test-coverage-tools: | $(GOVERALLS)
 test-coverage: COVERAGE_DIR := $(PROJECT_DIR)/test
 test-coverage: test-coverage-tools ; $(info  running coverage tests...) @ ## Run coverage tests
-	$Q go test -covermode=$(COVERAGE_MODE) -coverprofile=rdma-cni.cover ./...
+	$Q go test -covermode=$(COVERAGE_MODE) -coverprofile=rdma-cni.cover $(PKGS)
 
 # Container image
 .PHONY: image
