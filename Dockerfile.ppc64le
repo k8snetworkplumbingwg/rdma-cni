@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM ppc64le/golang:alpine as builder
 
 COPY . /usr/src/rdma-cni
 
@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual build-dependencies build-base=~0.5 && \
     make clean && \
     make build
 
-FROM alpine:3
+FROM ppc64le/alpine
 COPY --from=builder /usr/src/rdma-cni/build/rdma /usr/bin/
 WORKDIR /
 

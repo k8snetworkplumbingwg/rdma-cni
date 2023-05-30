@@ -3,16 +3,12 @@ BINARY_NAME=rdma
 PACKAGE=rdma-cni
 ORG_PATH=github.com/k8snetworkplumbingwg
 REPO_PATH=$(ORG_PATH)/$(PACKAGE)
-GOPATH=$(CURDIR)/.gopath
-GOBIN =$(CURDIR)/bin
-BUILDDIR=$(CURDIR)/build
-BASE=$(GOPATH)/src/$(REPO_PATH)
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+BINDIR =$(PROJECT_DIR)/bin
+BUILDDIR=$(PROJECT_DIR)/build
 GOFILES=$(shell find . -name *.go | grep -vE "(\/vendor\/)|(_test.go)")
-PKGS=$(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
-TESTPKGS = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
-
-export GOPATH
-export GOBIN
+PKGS=$(or $(PKG),$(shell cd $(PROJECT_DIR) && go list ./... | grep -v "^$(PACKAGE)/vendor/"))
+TESTPKGS = $(shell go list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
 
 # Version
 VERSION?=master
@@ -22,8 +18,8 @@ LDFLAGS="-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE
 
 # Docker
 IMAGE_BUILDER?=@docker
-IMAGEDIR=$(BASE)/images
-DOCKERFILE?=$(CURDIR)/Dockerfile
+IMAGEDIR=$(PROJECT_DIR)/images
+DOCKERFILE?=$(PROJECT_DIR)/Dockerfile
 TAG?=ghcr.io/k8snetworkplumbingwg/rdma-cni
 IMAGE_BUILD_OPTS?=
 # Accept proxy settings for docker
@@ -37,53 +33,55 @@ ifdef HTTPS_PROXY
 endif
 IMAGE_BUILD_OPTS += $(DOCKERARGS)
 
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN := $(shell go env GOPATH)/bin
+else
+GOBIN := $(shell go env GOBIN)
+endif
+
+TARGET_OS ?= $(shell go env GOOS)
+TARGET_ARCH ?= $(shell go env GOARCH)
+
+# Options for go build command
+GO_BUILD_OPTS ?= CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH)
+
 # Go tools
-GO      = go
-GOLANGCI_LINT = $(GOBIN)/golangci-lint
+GOLANGCI_LINT = $(BINDIR)/golangci-lint
 # golangci-lint version should be updated periodically
 # we keep it fixed to avoid it from unexpectedly failing on the project
 # in case of a version bump
 GOLANGCI_LINT_VER = v1.51.2
-TIMEOUT = 15
+TIMEOUT = 30
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
 all: lint build
 
-$(BASE): ; $(info  setting GOPATH...)
-	@mkdir -p $(dir $@)
-	@ln -sf $(CURDIR) $@
+$(BUILDDIR): ; $(info Creating build directory...)
+	@cd $(PROJECT_DIR) && mkdir -p $@
 
-$(GOBIN):
-	@mkdir -p $@
-
-$(BUILDDIR): | $(BASE) ; $(info Creating build directory...)
-	@cd $(BASE) && mkdir -p $@
+$(BINDIR): ; $(info Creating bin directory...)
+	@cd $(PROJECT_DIR) && mkdir -p $@
 
 build: $(BUILDDIR)/$(BINARY_NAME) ; $(info Building $(BINARY_NAME)...) @ ## Build executable file
 	$(info Done!)
 
 $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
-	@cd $(BASE)/cmd/$(BINARY_NAME) && CGO_ENABLED=0 $(GO) build -o $(BUILDDIR)/$(BINARY_NAME) -tags no_openssl -ldflags $(LDFLAGS) -v
+	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/$(BINARY_NAME) -tags no_openssl -ldflags $(LDFLAGS) -v cmd/rdma/main.go
 
 # Tools
+$(GOLANGCI_LINT): ; $(info  building golangci-lint...)
+	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINDIR) $(GOLANGCI_LINT_VER)
 
-$(GOLANGCI_LINT): | $(BASE) ; $(info  building golangci-lint...)
-	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VER)
-
-GOVERALLS = $(GOBIN)/goveralls
-$(GOBIN)/goveralls: | $(BASE) ; $(info  building goveralls...)
-	$Q go get github.com/mattn/goveralls
+GOVERALLS = $(BINDIR)/goveralls
+$(BINDIR)/goveralls: ; $(info  building goveralls...)
+	$Q GOBIN=$(BINDIR) go install github.com/mattn/goveralls@v0.0.12
 
 # Tests
-
 .PHONY: lint
-lint: | $(BASE) $(GOLANGCI_LINT) ; $(info  running golangci-lint...) @ ## Run golangci-lint
-	$Q mkdir -p $(BASE)/test
-	$Q cd $(BASE) && ret=0 && \
-		test -z "$$($(GOLANGCI_LINT) run | tee $(BASE)/test/lint.out)" || ret=1 ; \
-		cat $(BASE)/test/lint.out ; rm -rf $(BASE)/test ; \
-	 exit $$ret
+lint: | $(GOLANGCI_LINT) ; $(info  running golangci-lint...) @ ## Run golangci-lint
+	$Q $(GOLANGCI_LINT) run ./...
 
 TEST_TARGETS := test-default test-bench test-short test-verbose test-race
 .PHONY: $(TEST_TARGETS) test-xml check test tests
@@ -93,33 +91,30 @@ test-verbose: ARGS=-v            ## Run tests in verbose mode with coverage repo
 test-race:    ARGS=-race         ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
-check test tests: lint | $(BASE) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests
-	$Q cd $(BASE) && $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
+check test tests: ; $(info  running $(NAME:%=% )tests...) @ ## Run tests
+	$Q go test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
-test-xml: lint | $(BASE) $(GO2XUNIT) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests with xUnit output
-	$Q cd $(BASE) && 2>&1 $(GO) test -timeout 20s -v $(TESTPKGS) | tee test/tests.output
+test-xml: | $(GO2XUNIT) ; $(info  running $(NAME:%=% )tests...) @ ## Run tests with xUnit output
+	$Q 2>&1 go test -timeout $(TIMEOUT)s -v $(TESTPKGS) | tee test/tests.output
 	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
 
-COVERAGE_MODE = count
+COVERAGE_MODE = set
 .PHONY: test-coverage test-coverage-tools
 test-coverage-tools: | $(GOVERALLS)
-test-coverage: COVERAGE_DIR := $(CURDIR)/test
-test-coverage: test-coverage-tools | $(BASE) ; $(info  running coverage tests...) @ ## Run coverage tests
-	$Q cd $(BASE); $(GO) test -covermode=$(COVERAGE_MODE) -coverprofile=rdma-cni.cover ./...
+test-coverage: COVERAGE_DIR := $(PROJECT_DIR)/test
+test-coverage: test-coverage-tools ; $(info  running coverage tests...) @ ## Run coverage tests
+	$Q go test -covermode=$(COVERAGE_MODE) -coverprofile=rdma-cni.cover ./...
 
 # Container image
 .PHONY: image
-image: | $(BASE) ; $(info Building Docker image...)  @ ## Build conatiner image
-	$(IMAGE_BUILDER) build -t $(TAG) -f $(DOCKERFILE)  $(CURDIR) $(IMAGE_BUILD_OPTS)
-
+image: ; $(info Building Docker image...)  @ ## Build conatiner image
+	$(IMAGE_BUILDER) build -t $(TAG) -f $(DOCKERFILE) $(PROJECT_DIR) $(IMAGE_BUILD_OPTS)
 
 # Misc
-
 .PHONY: clean
 clean: ; $(info  Cleaning...)	 @ ## Cleanup everything
-	@$(GO) clean -modcache
-	@rm -rf $(GOPATH)
 	@rm -rf $(BUILDDIR)
+	@rm -rf $(BINDIR)
 	@rm -rf  test
 
 .PHONY: help
