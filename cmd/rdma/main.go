@@ -261,7 +261,8 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
 	err = plugin.stateCache.Load(pRef, &rdmaState)
 	if err != nil {
-		return err
+		log.Warn().Msgf("failed to load cache entry(%q). it may have been deleted by a previous CMD_DEL call. %v", pRef, err)
+		return nil
 	}
 
 	// Move RDMA device to default namespace
