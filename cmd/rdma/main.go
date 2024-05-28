@@ -315,5 +315,5 @@ func main() {
 		stateCache:  cache.NewStateCache(),
 	}
 	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel,
-		cniversion.PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0"), "")
+		cniversion.All, "")
 }
