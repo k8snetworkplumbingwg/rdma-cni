@@ -45,6 +45,7 @@ TARGET_ARCH ?= $(shell go env GOARCH)
 
 # Options for go build command
 GO_BUILD_OPTS ?= CGO_ENABLED=0 GOOS=$(TARGET_OS) GOARCH=$(TARGET_ARCH)
+GO_TAGS ?=-tags no_openssl
 
 # Go tools
 GOLANGCI_LINT = $(BINDIR)/golangci-lint
@@ -68,7 +69,7 @@ build: $(BUILDDIR)/$(BINARY_NAME) ; $(info Building $(BINARY_NAME)...) @ ## Buil
 	$(info Done!)
 
 $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
-	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/$(BINARY_NAME) -tags no_openssl -ldflags $(LDFLAGS) -v cmd/rdma/main.go
+	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/$(BINARY_NAME) $(GO_TAGS) -ldflags $(LDFLAGS) -v cmd/rdma/main.go
 
 # Tools
 $(GOLANGCI_LINT): ; $(info  building golangci-lint...)
