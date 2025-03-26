@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   golangci:
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: set up Go
         uses: actions/setup-go@v3
@@ -15,14 +15,14 @@ jobs:
         run: make lint
   shellcheck:
     name: shellcheck
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: checkout PR
       uses: actions/checkout@v2
     - name: run ShellCheck
       uses: ludeeus/action-shellcheck@master
   hadolint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Hadolint
     steps:
     - name: checkout PR 
