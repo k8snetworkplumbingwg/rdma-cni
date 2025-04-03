@@ -315,6 +315,11 @@ func main() {
 		nsManager:   newNsManager(),
 		stateCache:  cache.NewStateCache(),
 	}
-	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDel,
+	skel.PluginMainFuncs(
+		skel.CNIFuncs{
+			Add:   plugin.CmdAdd,
+			Check: plugin.CmdCheck,
+			Del:   plugin.CmdDel,
+		},
 		cniversion.All, "")
 }
