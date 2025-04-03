@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
       - name: check out code into the Go module directory
@@ -33,7 +33,7 @@ jobs:
     needs: build
     steps:
       - name: set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: 1.24.x
       - name: check out code into the Go module directory
@@ -47,7 +47,7 @@ jobs:
     name: coverage
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: 1.24.x
       - name: Check out code into the Go module directory
