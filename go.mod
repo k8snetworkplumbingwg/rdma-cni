@@ -4,14 +4,14 @@ go 1.24
 
 require (
 	github.com/Mellanox/rdmamap v1.0.0
-	github.com/containernetworking/cni v1.1.2
-	github.com/containernetworking/plugins v1.5.0
+	github.com/containernetworking/cni v1.2.3
+	github.com/containernetworking/plugins v1.6.2
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.2
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/afero v1.14.0
 	github.com/stretchr/testify v1.10.0
-	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/vishvananda/netlink v1.3.0
 )
 
 require (
