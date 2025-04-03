@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	dirPerms  = 0o700
+	filePerms = 0o600
+)
+
 var (
 	// CacheDir is used By default for caching CNI network state
 	CacheDir = "/var/lib/cni/rdma"
@@ -47,14 +52,14 @@ func (sc *FsStateCache) Save(ref StateRef, state interface{}) error {
 	}
 
 	//nolint:gomnd
-	if err = sc.fsOps.MkdirAll(sc.basePath, 0700); err != nil {
+	if err = sc.fsOps.MkdirAll(sc.basePath, dirPerms); err != nil {
 		return fmt.Errorf("failed to create data cache directory(%q): %v", sc.basePath, err)
 	}
 
 	path := filepath.Join(sc.basePath, sRef)
 
 	//nolint:gomnd
-	err = sc.fsOps.WriteFile(path, bytes, 0600)
+	err = sc.fsOps.WriteFile(path, bytes, filePerms)
 	if err != nil {
 		return fmt.Errorf("failed to write cache data in the path(%q): %v", path, err)
 	}
