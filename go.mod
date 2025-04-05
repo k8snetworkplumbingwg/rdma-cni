@@ -3,7 +3,7 @@ module github.com/k8snetworkplumbingwg/rdma-cni
 go 1.24
 
 require (
-	github.com/Mellanox/rdmamap v1.0.0
+	github.com/Mellanox/rdmamap v1.1.0
 	github.com/containernetworking/cni v1.2.3
 	github.com/containernetworking/plugins v1.6.2
 	github.com/onsi/ginkgo/v2 v2.23.3
