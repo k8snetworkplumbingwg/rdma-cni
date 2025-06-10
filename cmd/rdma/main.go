@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -19,6 +20,14 @@ import (
 	rdmatypes "github.com/k8snetworkplumbingwg/rdma-cni/pkg/types"
 	"github.com/k8snetworkplumbingwg/rdma-cni/pkg/utils"
 )
+
+//nolint:gochecknoinits
+func init() {
+	// this ensures that main runs only on main thread (thread group leader).
+	// since namespace ops (unshare, setns) are done for a single thread, we
+	// must ensure that the goroutine does not jump from OS thread to thread
+	runtime.LockOSThread()
+}
 
 // Sets the initial log level configurations
 // this is overridden by the "debug" CNI arg
