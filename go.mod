@@ -11,7 +11,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/afero v1.14.0
 	github.com/stretchr/testify v1.10.0
-	github.com/vishvananda/netlink v1.3.1-0.20250303224720-0e7078ed04c8
+	github.com/vishvananda/netlink v1.3.1
 )
 
 require (
