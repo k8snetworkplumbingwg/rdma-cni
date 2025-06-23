@@ -15,5 +15,5 @@
 # Folders
 .gopath/
 .idea/
-bin/
-build/
+/bin/
+/build/
