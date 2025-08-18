@@ -20,7 +20,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: check out code into the Go module directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: build test for ${{ matrix.goarch }}
         env:
           GOARCH: ${{ matrix.goarch }}
@@ -37,7 +37,7 @@ jobs:
         with:
           go-version: 1.24.x
       - name: check out code into the Go module directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: run unit-test
         run: make test
 
@@ -51,7 +51,7 @@ jobs:
         with:
           go-version: 1.24.x
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Go test with coverage
         run: make test-coverage # sudo needed for netns change in test
       - name: Coveralls
