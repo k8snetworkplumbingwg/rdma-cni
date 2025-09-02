@@ -1,0 +1,17 @@
+all: false
+dir: "{{.InterfaceDir}}/mocks"
+pkgname: mocks
+packages:
+  github.com/k8snetworkplumbingwg/rdma-cni/pkg/cache:
+    interfaces:
+      StateCache:
+        config:
+          filename: "StateCache.go"
+  github.com/k8snetworkplumbingwg/rdma-cni/pkg/rdma:
+    interfaces:
+      Manager:
+        config:
+          filename: "RdmaManager.go"
+      BasicOps:
+        config:
+          filename: "RdmaBasicOps.go"

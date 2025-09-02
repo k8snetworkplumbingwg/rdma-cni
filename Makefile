@@ -53,11 +53,12 @@ GOLANGCI_LINT = $(BINDIR)/golangci-lint
 # we keep it fixed to avoid it from unexpectedly failing on the project
 # in case of a version bump
 GOLANGCI_LINT_VER = v1.64.7
+MOCKERY_VERSION ?= v3.5.4
 TIMEOUT = 30
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: lint build
+all: generate lint build
 
 $(BUILDDIR): ; $(info Creating build directory...)
 	@cd $(PROJECT_DIR) && mkdir -p $@
@@ -74,6 +75,10 @@ $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
 # Tools
 $(GOLANGCI_LINT): ; $(info  building golangci-lint...)
 	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINDIR) $(GOLANGCI_LINT_VER)
+
+MOCKERY= $(BINDIR)/mockery
+$(MOCKERY): ; $(info  building mockery...)
+	$Q GOBIN=$(BINDIR) go install github.com/vektra/mockery/v3@$(MOCKERY_VERSION)
 
 GOVERALLS = $(BINDIR)/goveralls
 $(BINDIR)/goveralls: ; $(info  building goveralls...)
@@ -117,6 +122,12 @@ clean: ; $(info  Cleaning...)	 @ ## Cleanup everything
 	@rm -rf $(BUILDDIR)
 	@rm -rf $(BINDIR)
 	@rm -rf  test
+
+.PHONY: generate
+generate: generate-mocks ## Run all generate-* targets
+
+generate-mocks: $(MOCKERY) ## Generate mocks
+	$(MOCKERY)
 
 .PHONY: help
 help: ## Show this message
