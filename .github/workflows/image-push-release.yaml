@@ -13,7 +13,7 @@ jobs:
     name: image push AMD64
     steps:
       - name: check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -50,7 +50,7 @@ jobs:
     name: image push ARM64
     steps:
       - name: check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -87,7 +87,7 @@ jobs:
     name: image push ppc64le
     steps:
       - name: check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: set up Docker Buildx
         uses: docker/setup-buildx-action@v3
