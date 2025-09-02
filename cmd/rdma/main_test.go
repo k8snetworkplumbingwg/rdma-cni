@@ -126,15 +126,15 @@ var _ = Describe("Main", func() {
 	var (
 		plugin         rdmaCniPlugin
 		dummyNsMgr     dummyNsMananger
-		rdmaMgrMock    rdmaMocks.RdmaManager
-		stateCacheMock cacheMocks.StateCache
+		rdmaMgrMock    rdmaMocks.MockManager
+		stateCacheMock cacheMocks.MockStateCache
 		t              GinkgoTInterface
 	)
 
 	JustBeforeEach(func() {
-		rdmaMgrMock = rdmaMocks.RdmaManager{}
+		rdmaMgrMock = rdmaMocks.MockManager{}
 		dummyNsMgr = dummyNsMananger{}
-		stateCacheMock = cacheMocks.StateCache{}
+		stateCacheMock = cacheMocks.MockStateCache{}
 		t = GinkgoT()
 		plugin = rdmaCniPlugin{
 			rdmaManager: &rdmaMgrMock,

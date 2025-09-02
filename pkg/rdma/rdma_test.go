@@ -24,12 +24,12 @@ func (dns *dummyNetNs) Fd() uintptr {
 var _ = Describe("Rdma Manager", func() {
 	var (
 		rdmaManager Manager
-		rdmaOpsMock mocks.RdmaBasicOps
+		rdmaOpsMock mocks.MockBasicOps
 		t           GinkgoTInterface
 	)
 
 	JustBeforeEach(func() {
-		rdmaOpsMock = mocks.RdmaBasicOps{}
+		rdmaOpsMock = mocks.MockBasicOps{}
 		rdmaManager = &rdmaManagerNetlink{rdmaOps: &rdmaOpsMock}
 		t = GinkgoT()
 	})
