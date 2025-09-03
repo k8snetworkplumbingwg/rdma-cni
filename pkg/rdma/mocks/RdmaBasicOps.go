@@ -36,6 +36,59 @@ func (_m *MockBasicOps) EXPECT() *MockBasicOps_Expecter {
 	return &MockBasicOps_Expecter{mock: &_m.Mock}
 }
 
+// GetRdmaDevicesForAuxdev provides a mock function for the type MockBasicOps
+func (_mock *MockBasicOps) GetRdmaDevicesForAuxdev(auxDev string) []string {
+	ret := _mock.Called(auxDev)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRdmaDevicesForAuxdev")
+	}
+
+	var r0 []string
+	if returnFunc, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = returnFunc(auxDev)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	return r0
+}
+
+// MockBasicOps_GetRdmaDevicesForAuxdev_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRdmaDevicesForAuxdev'
+type MockBasicOps_GetRdmaDevicesForAuxdev_Call struct {
+	*mock.Call
+}
+
+// GetRdmaDevicesForAuxdev is a helper method to define mock.On call
+//   - auxDev string
+func (_e *MockBasicOps_Expecter) GetRdmaDevicesForAuxdev(auxDev interface{}) *MockBasicOps_GetRdmaDevicesForAuxdev_Call {
+	return &MockBasicOps_GetRdmaDevicesForAuxdev_Call{Call: _e.mock.On("GetRdmaDevicesForAuxdev", auxDev)}
+}
+
+func (_c *MockBasicOps_GetRdmaDevicesForAuxdev_Call) Run(run func(auxDev string)) *MockBasicOps_GetRdmaDevicesForAuxdev_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBasicOps_GetRdmaDevicesForAuxdev_Call) Return(strings []string) *MockBasicOps_GetRdmaDevicesForAuxdev_Call {
+	_c.Call.Return(strings)
+	return _c
+}
+
+func (_c *MockBasicOps_GetRdmaDevicesForAuxdev_Call) RunAndReturn(run func(auxDev string) []string) *MockBasicOps_GetRdmaDevicesForAuxdev_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRdmaDevicesForPcidev provides a mock function for the type MockBasicOps
 func (_mock *MockBasicOps) GetRdmaDevicesForPcidev(pcidevName string) []string {
 	ret := _mock.Called(pcidevName)

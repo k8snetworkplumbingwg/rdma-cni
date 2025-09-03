@@ -17,6 +17,8 @@ type BasicOps interface {
 	RdmaSystemSetNetnsMode(newMode string) error
 	// Equivalent to rdmamap.GetRdmaDevicesForPcidev(...)
 	GetRdmaDevicesForPcidev(pcidevName string) []string
+	// Equivalent to rdmamap.GetRdmaDevicesForAuxdev(...)
+	GetRdmaDevicesForAuxdev(auxDev string) []string
 }
 
 func newRdmaBasicOps() BasicOps {
@@ -49,4 +51,9 @@ func (rdma *rdmaBasicOpsImpl) RdmaSystemSetNetnsMode(newMode string) error {
 // Equivalent to rdmamap.GetRdmaDevicesForPcidev(...)
 func (rdma *rdmaBasicOpsImpl) GetRdmaDevicesForPcidev(pcidevName string) []string {
 	return rdmamap.GetRdmaDevicesForPcidev(pcidevName)
+}
+
+// Equivalent to rdmamap.GetRdmaDevicesForAuxdev(...)
+func (rdma *rdmaBasicOpsImpl) GetRdmaDevicesForAuxdev(auxDev string) []string {
+	return rdmamap.GetRdmaDevicesForAuxdev(auxDev)
 }

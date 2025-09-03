@@ -19,7 +19,10 @@ type Manager interface {
 	// Move RDMA device from current network namespace to network namespace
 	MoveRdmaDevToNs(rdmaDev string, netNs ns.NetNS) error
 	// Get RDMA devices associated with the given PCI device in D:B:D.f format e.g 0000:04:00.0
-	GetRdmaDevsForPciDev(pciDev string) ([]string, error)
+	GetRdmaDevsForPciDev(pciDev string) []string
+	// Get RDMA devices associated with the given auxiliary device. For example, for input mlx5_core.sf.4, returns
+	// [mlx5_0,mlx5_10,..]
+	GetRdmaDevsForAuxDev(auxDev string) []string
 	// Get RDMA subsystem namespace awareness mode ["exclusive" | "shared"]
 	GetSystemRdmaMode() (string, error)
 	// Set RDMA subsystem namespace awareness mode ["exclusive" | "shared"]
@@ -44,8 +47,14 @@ func (rmn *rdmaManagerNetlink) MoveRdmaDevToNs(rdmaDev string, netNs ns.NetNS) e
 }
 
 // Get RDMA device associated with the given PCI device in D:B:D.f format e.g 0000:04:00.1
-func (rmn *rdmaManagerNetlink) GetRdmaDevsForPciDev(pciDev string) ([]string, error) {
-	return rmn.rdmaOps.GetRdmaDevicesForPcidev(pciDev), nil
+func (rmn *rdmaManagerNetlink) GetRdmaDevsForPciDev(pciDev string) []string {
+	return rmn.rdmaOps.GetRdmaDevicesForPcidev(pciDev)
+}
+
+// Get RDMA devices associated with the given auxiliary device. For example, for input mlx5_core.sf.4, returns
+// [mlx5_0,mlx5_10,..]
+func (rmn *rdmaManagerNetlink) GetRdmaDevsForAuxDev(auxDev string) []string {
+	return rmn.rdmaOps.GetRdmaDevicesForAuxdev(auxDev)
 }
 
 // Get RDMA subsystem namespace awareness mode ["exclusive" | "shared"]
