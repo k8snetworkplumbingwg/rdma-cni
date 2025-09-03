@@ -80,6 +80,7 @@ issues:
       linters:
         - mnd
         - goconst
+        - dupl
     - text: "Magic number: 1"
       linters:
         - mnd
