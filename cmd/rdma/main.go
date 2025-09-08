@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -204,19 +205,11 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	rdmaDevs, err := plugin.rdmaManager.GetRdmaDevsForPciDev(conf.DeviceID)
-	if err != nil || len(rdmaDevs) == 0 {
-		return fmt.Errorf("failed to get RDMA devices for PCI device: %s. %v", conf.DeviceID, err)
-	}
-
-	if len(rdmaDevs) != 1 {
-		// Expecting exactly one RDMA device
-		return fmt.Errorf(
-			"discovered more than one RDMA device %v for PCI device %s. Unsupported state", rdmaDevs, conf.DeviceID)
-	}
-
 	// Move RDMA device to container namespace
-	rdmaDev := rdmaDevs[0]
+	rdmaDev, err := plugin.getRDMADevice(conf.DeviceID)
+	if err != nil {
+		return fmt.Errorf("failed to get RDMA device for device ID %s: %w", conf.DeviceID, err)
+	}
 
 	err = plugin.moveRdmaDevToNs(rdmaDev, args.Netns)
 	if err != nil {
@@ -286,6 +279,30 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 		log.Warn().Msgf("failed to delete cache entry(%q). %v", pRef, err)
 	}
 	return nil
+}
+
+// getRDMADevice returns the first RDMA device found for the given deviceID.
+func (plugin *rdmaCniPlugin) getRDMADevice(deviceID string) (string, error) {
+	var rdmaDevs []string
+	if utils.IsPCIAddress(deviceID) {
+		rdmaDevs = plugin.rdmaManager.GetRdmaDevsForPciDev(deviceID)
+		if len(rdmaDevs) == 0 {
+			return "", errors.New("no RDMA devices found")
+		}
+	} else {
+		rdmaDevs = plugin.rdmaManager.GetRdmaDevsForAuxDev(deviceID)
+		if len(rdmaDevs) == 0 {
+			return "", errors.New("no RDMA devices found")
+		}
+	}
+
+	if len(rdmaDevs) != 1 {
+		// Expecting exactly one RDMA device
+		return "", fmt.Errorf(
+			"discovered more than one RDMA device %v. Unsupported state", rdmaDevs)
+	}
+
+	return rdmaDevs[0], nil
 }
 
 func setupLogging() {

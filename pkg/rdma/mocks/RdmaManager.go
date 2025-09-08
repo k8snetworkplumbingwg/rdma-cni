@@ -36,8 +36,61 @@ func (_m *MockManager) EXPECT() *MockManager_Expecter {
 	return &MockManager_Expecter{mock: &_m.Mock}
 }
 
+// GetRdmaDevsForAuxDev provides a mock function for the type MockManager
+func (_mock *MockManager) GetRdmaDevsForAuxDev(auxDev string) []string {
+	ret := _mock.Called(auxDev)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRdmaDevsForAuxDev")
+	}
+
+	var r0 []string
+	if returnFunc, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = returnFunc(auxDev)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	return r0
+}
+
+// MockManager_GetRdmaDevsForAuxDev_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRdmaDevsForAuxDev'
+type MockManager_GetRdmaDevsForAuxDev_Call struct {
+	*mock.Call
+}
+
+// GetRdmaDevsForAuxDev is a helper method to define mock.On call
+//   - auxDev string
+func (_e *MockManager_Expecter) GetRdmaDevsForAuxDev(auxDev interface{}) *MockManager_GetRdmaDevsForAuxDev_Call {
+	return &MockManager_GetRdmaDevsForAuxDev_Call{Call: _e.mock.On("GetRdmaDevsForAuxDev", auxDev)}
+}
+
+func (_c *MockManager_GetRdmaDevsForAuxDev_Call) Run(run func(auxDev string)) *MockManager_GetRdmaDevsForAuxDev_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockManager_GetRdmaDevsForAuxDev_Call) Return(strings []string) *MockManager_GetRdmaDevsForAuxDev_Call {
+	_c.Call.Return(strings)
+	return _c
+}
+
+func (_c *MockManager_GetRdmaDevsForAuxDev_Call) RunAndReturn(run func(auxDev string) []string) *MockManager_GetRdmaDevsForAuxDev_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRdmaDevsForPciDev provides a mock function for the type MockManager
-func (_mock *MockManager) GetRdmaDevsForPciDev(pciDev string) ([]string, error) {
+func (_mock *MockManager) GetRdmaDevsForPciDev(pciDev string) []string {
 	ret := _mock.Called(pciDev)
 
 	if len(ret) == 0 {
@@ -45,10 +98,6 @@ func (_mock *MockManager) GetRdmaDevsForPciDev(pciDev string) ([]string, error) 
 	}
 
 	var r0 []string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) ([]string, error)); ok {
-		return returnFunc(pciDev)
-	}
 	if returnFunc, ok := ret.Get(0).(func(string) []string); ok {
 		r0 = returnFunc(pciDev)
 	} else {
@@ -56,12 +105,7 @@ func (_mock *MockManager) GetRdmaDevsForPciDev(pciDev string) ([]string, error) 
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
-		r1 = returnFunc(pciDev)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockManager_GetRdmaDevsForPciDev_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRdmaDevsForPciDev'
@@ -88,12 +132,12 @@ func (_c *MockManager_GetRdmaDevsForPciDev_Call) Run(run func(pciDev string)) *M
 	return _c
 }
 
-func (_c *MockManager_GetRdmaDevsForPciDev_Call) Return(strings []string, err error) *MockManager_GetRdmaDevsForPciDev_Call {
-	_c.Call.Return(strings, err)
+func (_c *MockManager_GetRdmaDevsForPciDev_Call) Return(strings []string) *MockManager_GetRdmaDevsForPciDev_Call {
+	_c.Call.Return(strings)
 	return _c
 }
 
-func (_c *MockManager_GetRdmaDevsForPciDev_Call) RunAndReturn(run func(pciDev string) ([]string, error)) *MockManager_GetRdmaDevsForPciDev_Call {
+func (_c *MockManager_GetRdmaDevsForPciDev_Call) RunAndReturn(run func(pciDev string) []string) *MockManager_GetRdmaDevsForPciDev_Call {
 	_c.Call.Return(run)
 	return _c
 }

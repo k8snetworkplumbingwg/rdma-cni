@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"regexp"
 
 	"github.com/vishvananda/netlink"
 )
@@ -45,4 +46,10 @@ func GetVfPciDevFromMAC(mac string) (string, error) {
 		err = fmt.Errorf("found more than one VF PCI device matching provided administrative mac address")
 	}
 	return dev, err
+}
+
+// IsPCIAddress returns whether the input is a valid PCI address.
+func IsPCIAddress(pciAddress string) bool {
+	re := regexp.MustCompile(`^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-7]$`)
+	return re.MatchString(pciAddress)
 }

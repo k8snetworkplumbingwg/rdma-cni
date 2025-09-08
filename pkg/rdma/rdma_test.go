@@ -39,9 +39,8 @@ var _ = Describe("Rdma Manager", func() {
 			It("Should pass and return value as provided by rdmaBasicOps", func() {
 				retVal := []string{"mlx5_3"}
 				rdmaOpsMock.On("GetRdmaDevicesForPcidev", mock.AnythingOfType("string")).Return(retVal, nil)
-				ret, err := rdmaManager.GetRdmaDevsForPciDev("04:00.1")
+				ret := rdmaManager.GetRdmaDevsForPciDev("04:00.1")
 				rdmaOpsMock.AssertExpectations(t)
-				Expect(err).ToNot(HaveOccurred())
 				Expect(ret).To(Equal(retVal))
 			})
 		})
@@ -49,9 +48,8 @@ var _ = Describe("Rdma Manager", func() {
 			It("Should return the same", func() {
 				retVal := []string{}
 				rdmaOpsMock.On("GetRdmaDevicesForPcidev", mock.AnythingOfType("string")).Return(retVal, nil)
-				ret, err := rdmaManager.GetRdmaDevsForPciDev("04:00.1")
+				ret := rdmaManager.GetRdmaDevsForPciDev("04:00.1")
 				rdmaOpsMock.AssertExpectations(t)
-				Expect(err).ToNot(HaveOccurred())
 				Expect(ret).To(Equal(retVal))
 			})
 		})

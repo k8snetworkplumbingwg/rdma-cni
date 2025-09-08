@@ -243,13 +243,34 @@ var _ = Describe("Main", func() {
 				rdmaMgrMock.AssertExpectations(t)
 				stateCacheMock.AssertExpectations(t)
 			})
+			It("Should succeed and move Rdma device associated with auxiliary device DeviceID to Namespace", func() {
+				auxDev := "mlx5_core.sf.6"
+				netName := "rdma-net"
+				rdmaDev := "mlx5_6"
+				cIfname := "net2"
+				cid := "a6b5c4d3e2f1"
+				cnsPath := "/proc/11142/ns/net"
+				cns, _ := dummyNsMgr.GetNS(cnsPath)
+				netconf := generateNetConfCmdAdd(netName, cIfname, auxDev)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
+				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
+				rdmaMgrMock.On("GetRdmaDevsForAuxDev", auxDev).Return([]string{rdmaDev}, nil)
+				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				expectedState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
+				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
+				err := plugin.CmdAdd(&args)
+				Expect(err).ToNot(HaveOccurred())
+				rdmaMgrMock.AssertExpectations(t)
+				stateCacheMock.AssertExpectations(t)
+			})
 		})
 		// TODO(adrian): Add additional tests to cover bad flows / differen network configurations
 	})
 
 	Describe("Test CmdDel()", func() {
 		Context("Valid configuration provided", func() {
-			It("Should succeed and move Rdma device associated with net device back to sandbox namespace", func() {
+			It("Should succeed and move Rdma device associated with PCI net device back to sandbox namespace", func() {
 				pciDev := "0000:04:00.5"
 				netName := "rdma-net"
 				rdmaDev := "mlx5_4"
@@ -258,6 +279,30 @@ var _ = Describe("Main", func() {
 				cnsPath := "/proc/12444/ns/net"
 				cns, _ := dummyNsMgr.GetCurrentNS()
 				rdmaState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
+				netconf := generateNetConfCmdDel(netName)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				stateCacheMock.On("Load", mock.AnythingOfType("cache.StateRef"),
+					mock.AnythingOfType("*types.RdmaNetState")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*rdmaTypes.RdmaNetState)
+					*arg = rdmaState
+				})
+				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				stateCacheMock.On("Delete", mock.AnythingOfType("cache.StateRef")).Return(nil)
+				err := plugin.CmdDel(&args)
+				Expect(err).ToNot(HaveOccurred())
+				rdmaMgrMock.AssertExpectations(t)
+				stateCacheMock.AssertExpectations(t)
+			})
+			It("Should succeed and move Rdma device associated with auxiliary device back to sandbox namespace", func() {
+				auxDev := "mlx5_core.sf.6"
+				netName := "rdma-net"
+				rdmaDev := "mlx5_6"
+				cIfname := "net2"
+				cid := "a1b2c3d4e5f6"
+				cnsPath := "/proc/12444/ns/net"
+				cns, _ := dummyNsMgr.GetCurrentNS()
+				rdmaState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
 				netconf := generateNetConfCmdDel(netName)
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
