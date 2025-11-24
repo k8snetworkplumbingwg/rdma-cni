@@ -89,105 +89,31 @@ Set RDMA subsystem namespace awareness mode to `exclusive` via rdma tool:
 > __*Note:*__ When changing RDMA subsystem netns mode, kernel requires that no network namespaces to exist in the system.
 
 ## Deploy RDMA CNI
-```console
-~$ kubectl apply -f ./deployment/rdma-cni-daemonset.yaml
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/deployment/rdma-cni-daemonset.yaml
 ```
 
 ## Deploy workload
 Pod definition can be found in the example below.
-```console
-~$ kubectl apply -f ./examples/my_rdma_test_pod.yaml
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/examples/rdma_test_pod.yaml
 ```
 
-### Pod example:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: rdma-test-pod
-  annotations:
-    k8s.v1.cni.cncf.io/networks: sriov-rdma-net
-spec:
-  containers:
-    - name: rdma-app
-      image: centos/tools
-      imagePullPolicy: IfNotPresent
-      command: [ "/bin/bash", "-c", "--" ]
-      args: [ "while true; do sleep 300000; done;" ]
-      resources:
-        requests:
-          mellanox.com/sriov_rdma: '1'
-        limits:
-          mellanox.com/sriov_rdma: '1'
-```
+## Example resource
 
-## SR-IOV Network Device Plugin ConfigMap example
-The following `yaml` defines an RDMA enabled SR-IOV resource pool named: `mellanox.com/sriov_rdma`
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sriovdp-config
-  namespace: kube-system
-data:
-  config.json: |
-    {
-      "resourceList": [
-        {
-           "resourcePrefix": "mellanox.com",
-           "resourceName": "sriov_rdma",
-           "selectors": {
-               "isRdma": true,
-               "vendors": ["15b3"],
-               "pfNames": ["enp4s0f0"]
-           }
-        }
-      ]
-    }
-```
-
-## Network CRD example
-The following `yaml` defines a network, `sriov-network`, associated with an rdma enabled resurce, `mellanox.com/sriov_rdma`.
-
-The CNI plugins that will be executed in a chain are for Pods that request this network are: _sriov_, _rdma_ CNIs
-
-```yaml
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: sriov-rdma-net
-  annotations:
-    k8s.v1.cni.cncf.io/resourceName: mellanox.com/sriov_rdma
-spec:
-  config: '{
-             "cniVersion": "0.3.1",
-             "name": "sriov-rdma-net",
-             "plugins": [{
-                          "type": "sriov",
-                          "ipam": {
-                            "type": "host-local",
-                            "subnet": "10.56.217.0/24",
-                            "routes": [{
-                              "dst": "0.0.0.0/0"
-                            }],
-                            "gateway": "10.56.217.1"
-                          }
-                        },
-                        {
-                          "type": "rdma"
-                        }]
-           }'
-```
+- [Pod](./examples/my_rdma_test_pod.yaml): test workload
+- [SR-IOV Network Device Plugin ConfigMap](./examples/sriov_dp_rdma_resource.yaml): defines an RDMA enabled SR-IOV resource pool named: mellanox.com/sriov_rdma
+- [Network CRD](./examples/rdma_net_crd.yaml):  defines a network, `sriov-network`, associated with an rdma enabled resurce, `mellanox.com/sriov_rdma`. The CNI plugins that will be executed in a chain are for Pods that request this network are: _sriov_, _rdma_ CNIs
 
 # Development
 It is recommended to use the same go version as defined in `.travis.yml`
 to avoid potential build related issues during development (newer version will most likely work as well).
 
 ### Build from source
-```console
-~$ git clone https://github.com/k8snetworkplumbingwg/rdma-cni.git
-~$ cd rdma-cni
-~$ make
+```bash
+$ git clone https://github.com/k8snetworkplumbingwg/rdma-cni.git
+$ cd rdma-cni
+$ make
 ```
 Upon a successful build, `rdma` binary can be found under `./build`.
 For small deployments (e.g a kubernetes test cluster/AIO K8s deployment) you can:
@@ -195,13 +121,13 @@ For small deployments (e.g a kubernetes test cluster/AIO K8s deployment) you can
 2. Build container image, push to your own image repo then modify the deployment template and deploy. 
 
 #### Run tests:
-```console
-~$ make tests
+```bash
+$ make tests
 ```
 
 #### Build image:
-```console
-~$ make image
+```bash
+$ make image
 ```
 
 # Limitations
