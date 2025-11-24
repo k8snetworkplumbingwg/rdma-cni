@@ -10,7 +10,7 @@ jobs:
         with:
           go-version: 1.24.x
       - name: checkout PR
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: run make lint
         run: make lint
   shellcheck:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: checkout PR
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     - name: run ShellCheck
       uses: ludeeus/action-shellcheck@master
   hadolint:
@@ -26,7 +26,7 @@ jobs:
     name: Hadolint
     steps:
     - name: checkout PR 
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     - name: run Hadolint
       uses: brpaz/hadolint-action@v1.5.0
       with:
