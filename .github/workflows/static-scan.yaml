@@ -28,6 +28,6 @@ jobs:
     - name: checkout PR 
       uses: actions/checkout@v6
     - name: run Hadolint
-      uses: brpaz/hadolint-action@v1.5.0
+      uses: hadolint/hadolint-action@v3.3.0
       with:
        dockerfile: Dockerfile
