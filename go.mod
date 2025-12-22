@@ -1,6 +1,6 @@
 module github.com/k8snetworkplumbingwg/rdma-cni
 
-go 1.24.2
+go 1.24.11
 
 require (
 	github.com/Mellanox/rdmamap v1.1.0
