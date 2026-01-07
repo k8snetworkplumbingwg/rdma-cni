@@ -27,7 +27,7 @@ type FileSystemOps interface {
 type stdFileSystemOps struct{}
 
 func (sfs *stdFileSystemOps) ReadFile(filename string) ([]byte, error) {
-	return os.ReadFile(filename)
+	return os.ReadFile(filename) //nolint:gosec
 }
 
 func (sfs *stdFileSystemOps) WriteFile(filename string, data []byte, perm os.FileMode) error {

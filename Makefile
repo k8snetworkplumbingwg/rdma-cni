@@ -52,7 +52,7 @@ GOLANGCI_LINT = $(BINDIR)/golangci-lint
 # golangci-lint version should be updated periodically
 # we keep it fixed to avoid it from unexpectedly failing on the project
 # in case of a version bump
-GOLANGCI_LINT_VER = v1.64.7
+GOLANGCI_LINT_VER = v2.7.2
 MOCKERY_VERSION ?= v3.5.4
 TIMEOUT = 30
 Q = $(if $(filter 1,$V),,@)
@@ -73,8 +73,8 @@ $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
 	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/$(BINARY_NAME) $(GO_TAGS) -ldflags $(LDFLAGS) -v cmd/rdma/main.go
 
 # Tools
-$(GOLANGCI_LINT): ; $(info  building golangci-lint...)
-	$Q curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINDIR) $(GOLANGCI_LINT_VER)
+$(GOLANGCI_LINT): | $(BINDIR) ; $(info  installing golangci-lint...)
+	$Q GOBIN=$(BINDIR) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VER)
 
 MOCKERY= $(BINDIR)/mockery
 $(MOCKERY): ; $(info  building mockery...)
