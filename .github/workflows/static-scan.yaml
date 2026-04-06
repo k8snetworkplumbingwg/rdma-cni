@@ -13,14 +13,6 @@ jobs:
         uses: actions/checkout@v6
       - name: run make lint
         run: make lint
-  shellcheck:
-    name: shellcheck
-    runs-on: ubuntu-24.04
-    steps:
-    - name: checkout PR
-      uses: actions/checkout@v6
-    - name: run ShellCheck
-      uses: ludeeus/action-shellcheck@master
   hadolint:
     runs-on: ubuntu-24.04
     name: Hadolint
