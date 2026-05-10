@@ -71,6 +71,23 @@ For a Kubernetes deployment, each SR-IOV capable worker node should have:
 ```
 > __*Note:*__ "args" keyword is optional.
 
+### RDMADeviceName (optional)
+Optional `rdmaDeviceName` (under `args.cni`) allow users to set custom RDMA device name. Upon `cmdDel` original RDMA device name will be restored.
+
+```json
+{
+  "cniVersion": "0.3.1",
+  "type": "rdma",
+  "args": {
+    "cni": {
+      "rdmaDeviceName": "custom-name",
+      "debug": true
+    }
+  }
+}
+```
+> __*Note:*__ `rdmaDeviceName` is optional
+
 # Deployment
 
 ## System configuration
