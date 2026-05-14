@@ -66,11 +66,15 @@ $(BUILDDIR): ; $(info Creating build directory...)
 $(BINDIR): ; $(info Creating bin directory...)
 	@cd $(PROJECT_DIR) && mkdir -p $@
 
-build: $(BUILDDIR)/$(BINARY_NAME) ; $(info Building $(BINARY_NAME)...) @ ## Build executable file
+build: $(BUILDDIR)/$(BINARY_NAME) build-entrypoint ; $(info Building $(BINARY_NAME)...) @ ## Build executable file
 	$(info Done!)
 
 $(BUILDDIR)/$(BINARY_NAME): $(GOFILES) | $(BUILDDIR)
 	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/$(BINARY_NAME) $(GO_TAGS) -ldflags $(LDFLAGS) -v cmd/rdma/main.go
+
+.PHONY: build-entrypoint
+build-entrypoint: | $(BUILDDIR) ; $(info Building entrypoint...) @ ## Build entrypoint binary
+	@$(GO_BUILD_OPTS) go build -o $(BUILDDIR)/entrypoint $(GO_TAGS) ./cmd/entrypoint/
 
 # Tools
 $(GOLANGCI_LINT): | $(BINDIR) ; $(info  installing golangci-lint...)
