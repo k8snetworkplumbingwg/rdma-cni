@@ -35,7 +35,7 @@ func generateNetConfCmdDel(netName string) rdmaTypes.RdmaNetConf {
 	}
 }
 
-func generateNetConfCmdAdd(netName, cIfname, deviceID string) rdmaTypes.RdmaNetConf {
+func generateNetConfCmdAdd(netName, cIfname, deviceID string, rdmaDevName string) rdmaTypes.RdmaNetConf {
 	prevResult := current.Result{
 		CNIVersion: "0.4.0",
 		Interfaces: []*current.Interface{{
@@ -63,6 +63,7 @@ func generateNetConfCmdAdd(netName, cIfname, deviceID string) rdmaTypes.RdmaNetC
 			PrevResult:    nil,
 		},
 		DeviceID: deviceID,
+		Args:     rdmaTypes.CNIArgs{CNI: rdmaTypes.RdmaCNIArgs{RDMADeviceName: rdmaDevName}},
 	}
 }
 
@@ -225,18 +226,20 @@ var _ = Describe("Main", func() {
 			It("Should succeed and move Rdma device associated with provided PCI DeviceID to Namespace", func() {
 				pciDev := "0000:04:00.5"
 				netName := "rdma-net"
-				rdmaDev := "mlx5_4"
 				cIfname := "net1"
+				rdmaDev := rdmaDevPrefix + cIfname
+				origRdmaDev := "mlx5_4"
 				cid := "a1b2c3d4e5f6"
 				cnsPath := "/proc/12444/ns/net"
 				cns, _ := dummyNsMgr.GetNS(cnsPath)
-				netconf := generateNetConfCmdAdd(netName, cIfname, pciDev)
+				netconf := generateNetConfCmdAdd(netName, cIfname, pciDev, "")
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
-				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{rdmaDev}, nil)
+				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{origRdmaDev}, nil)
+				rdmaMgrMock.On("SetRdmaDevName", origRdmaDev, rdmaDev).Return(nil)
 				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
-				expectedState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
+				expectedState := generateRdmaNetState(pciDev, origRdmaDev, rdmaDev)
 				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
 				err := plugin.CmdAdd(&args)
 				Expect(err).ToNot(HaveOccurred())
@@ -246,18 +249,45 @@ var _ = Describe("Main", func() {
 			It("Should succeed and move Rdma device associated with auxiliary device DeviceID to Namespace", func() {
 				auxDev := "mlx5_core.sf.6"
 				netName := "rdma-net"
-				rdmaDev := "mlx5_6"
 				cIfname := "net2"
+				rdmaDev := rdmaDevPrefix + cIfname
+				origRdmaDev := "mlx5_6"
 				cid := "a6b5c4d3e2f1"
 				cnsPath := "/proc/11142/ns/net"
 				cns, _ := dummyNsMgr.GetNS(cnsPath)
-				netconf := generateNetConfCmdAdd(netName, cIfname, auxDev)
+				netconf := generateNetConfCmdAdd(netName, cIfname, auxDev, "")
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
-				rdmaMgrMock.On("GetRdmaDevsForAuxDev", auxDev).Return([]string{rdmaDev}, nil)
+				rdmaMgrMock.On("GetRdmaDevsForAuxDev", auxDev).Return([]string{origRdmaDev}, nil)
+				rdmaMgrMock.On("SetRdmaDevName", origRdmaDev, rdmaDev).Return(nil)
 				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
-				expectedState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
+				expectedState := generateRdmaNetState(auxDev, origRdmaDev, rdmaDev)
+				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
+				err := plugin.CmdAdd(&args)
+				Expect(err).ToNot(HaveOccurred())
+				rdmaMgrMock.AssertExpectations(t)
+				stateCacheMock.AssertExpectations(t)
+			})
+			It("Should succeed and move Rdma device associated with provided PCI DeviceID to Namespace with custom RDMA device name", func() {
+				pciDev := "0000:04:00.5"
+				netName := "rdma-net"
+				cIfname := "net1"
+				rdmaDev := rdmaDevPrefix + cIfname
+				origRdmaDev := "mlx5_4"
+				customRdmaDev := "custom-rdma"
+				cid := "a1b2c3d4e5f6"
+				cnsPath := "/proc/12444/ns/net"
+				cns, _ := dummyNsMgr.GetNS(cnsPath)
+				netconf := generateNetConfCmdAdd(netName, cIfname, pciDev, customRdmaDev)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
+				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
+				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{origRdmaDev}, nil)
+				rdmaMgrMock.On("SetRdmaDevName", origRdmaDev, customRdmaDev).Return(nil)
+				rdmaDev = netconf.Args.CNI.RDMADeviceName
+				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				expectedState := generateRdmaNetState(pciDev, origRdmaDev, rdmaDev)
 				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
 				err := plugin.CmdAdd(&args)
 				Expect(err).ToNot(HaveOccurred())
@@ -275,10 +305,11 @@ var _ = Describe("Main", func() {
 				netName := "rdma-net"
 				rdmaDev := "mlx5_4"
 				cIfname := "net1"
+				containerRdmaDev := rdmaDevPrefix + cIfname
 				cid := "a1b2c3d4e5f6"
 				cnsPath := "/proc/12444/ns/net"
 				cns, _ := dummyNsMgr.GetCurrentNS()
-				rdmaState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
+				rdmaState := generateRdmaNetState(pciDev, rdmaDev, containerRdmaDev)
 				netconf := generateNetConfCmdDel(netName)
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
@@ -287,7 +318,8 @@ var _ = Describe("Main", func() {
 					arg := args.Get(1).(*rdmaTypes.RdmaNetState)
 					*arg = rdmaState
 				})
-				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				rdmaMgrMock.On("MoveRdmaDevToNs", containerRdmaDev, cns).Return(nil)
+				rdmaMgrMock.On("SetRdmaDevName", containerRdmaDev, rdmaDev).Return(nil)
 				stateCacheMock.On("Delete", mock.AnythingOfType("cache.StateRef")).Return(nil)
 				err := plugin.CmdDel(&args)
 				Expect(err).ToNot(HaveOccurred())
@@ -299,10 +331,11 @@ var _ = Describe("Main", func() {
 				netName := "rdma-net"
 				rdmaDev := "mlx5_6"
 				cIfname := "net2"
+				containerRdmaDev := rdmaDevPrefix + cIfname
 				cid := "a1b2c3d4e5f6"
 				cnsPath := "/proc/12444/ns/net"
 				cns, _ := dummyNsMgr.GetCurrentNS()
-				rdmaState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
+				rdmaState := generateRdmaNetState(auxDev, rdmaDev, containerRdmaDev)
 				netconf := generateNetConfCmdDel(netName)
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
 				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
@@ -311,7 +344,9 @@ var _ = Describe("Main", func() {
 					arg := args.Get(1).(*rdmaTypes.RdmaNetState)
 					*arg = rdmaState
 				})
-				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				rdmaMgrMock.On("MoveRdmaDevToNs", containerRdmaDev, cns).Return(nil)
+				rdmaMgrMock.On("SetRdmaDevName", containerRdmaDev, rdmaDev).Return(nil)
+				_ = containerRdmaDev
 				stateCacheMock.On("Delete", mock.AnythingOfType("cache.StateRef")).Return(nil)
 				err := plugin.CmdDel(&args)
 				Expect(err).ToNot(HaveOccurred())
