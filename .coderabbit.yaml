@@ -1,0 +1,239 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+enable_free_tier: true
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  in_progress_fortune: false
+  review_status: true
+  collapse_walkthrough: false
+
+  path_filters:
+    - "!**/zz_generated*"
+    - "!go.sum"
+    - "!**/mocks/**"
+
+  auto_review:
+    enabled: true
+    drafts: true
+
+  # ── Path instructions ────────────────────────────────────────
+  path_instructions:
+
+    # ── Go code — general ────────────────────────────────────────
+    - path: "**/*.go"
+      instructions: |
+        Go security and best practices:
+        - Never ignore error returns; wrap errors with context using fmt.Errorf("...: %w", err)
+        - Use stdlib crypto/* and golang.org/x/crypto; avoid third-party crypto libraries
+        - Integer overflow: bounds-check user-supplied sizes
+        - context.Context for cancellation and timeouts on all network operations
+        - Nil pointer checks on RDMA device structs and netlink results before
+          accessing fields — RDMA device discovery can return incomplete data
+        - Use structured logging (zerolog) with appropriate levels
+        - CNI plugin specifics: always validate PrevResult in chained plugin calls,
+          lock OS thread before namespace operations (runtime.LockOSThread),
+          and properly restore/close namespace file descriptors
+
+    # ── CNI plugin entry point ───────────────────────────────────
+    - path: "cmd/rdma/**/*.go"
+      instructions: |
+        CNI plugin binary review (CmdAdd, CmdCheck, CmdDel):
+        - Validate CmdAdd/CmdCheck/CmdDel implementations follow the CNI specification
+        - CmdAdd must check RDMA subsystem namespace mode is "exclusive" before proceeding;
+          fail with a clear error if the system is in shared mode
+        - Verify proper namespace handling with runtime.LockOSThread() before
+          any namespace switch operations
+        - Ensure proper CNI result chaining: parse PrevResult correctly and return
+          the result from the delegate plugin unchanged
+        - State cache: verify CmdAdd saves state and CmdDel restores/cleans up state
+          via the cache package
+        - Error paths must return well-formed CNI error responses, not raw Go errors
+        - Verify netconf (RdmaNetConf) is parsed and validated before use
+
+    # ── RDMA manager ─────────────────────────────────────────────
+    - path: "pkg/rdma/**/*.go"
+      instructions: |
+        RDMA manager review:
+        - Validate RDMA namespace mode handling: the plugin requires "exclusive" mode;
+          verify GetSystemRdmaMode() checks are correct
+        - Netlink RDMA operations (RdmaLinkSetNsFd, RdmaLinkByName, RdmaLinkList)
+          must have proper error handling — netlink calls can fail due to kernel
+          module state or missing RDMA devices
+        - RDMA device discovery: verify correct lookup for both PCI devices
+          (D:B:D.f format) and auxiliary devices (e.g., mlx5_core.sf.4) via rdmamap
+        - Namespace fd handling: ensure file descriptors are properly closed after use
+          to avoid fd leaks
+        - Validate that MoveRdmaDevToNs correctly moves all RDMA devices associated
+          with the target network device
+        - Interface methods should match the RdmaManager interface contract
+
+    # ── State cache ──────────────────────────────────────────────
+    - path: "pkg/cache/**/*.go"
+      instructions: |
+        File-based CNI state cache review (/var/lib/cni/rdma):
+        - File permissions: directories should be 0700, files should be 0600
+        - Path safety: validate container ID and network name inputs to prevent
+          path traversal attacks (no ".." components, no absolute paths in keys)
+        - JSON marshal/unmarshal: handle errors properly; do not silently ignore
+          corrupted cache files
+        - CmdDel cleanup: verify cache files are removed on successful deletion
+        - Concurrent access: CNI plugins may run concurrently for different containers;
+          ensure cache operations are safe for parallel execution
+
+    # ── Types ────────────────────────────────────────────────────
+    - path: "pkg/types/**/*.go"
+      instructions: |
+        Type definitions review (RdmaNetConf, RdmaNetState):
+        - JSON tags must match CNI/netconf conventions (lowercase, omitempty where appropriate)
+        - Backward compatibility: new fields in RdmaNetState must have omitempty
+          and sensible zero values to support reading older cache files
+        - RdmaNetConf embeds cni.NetConf — verify no field name collisions
+        - Validate that type changes do not break existing netconf JSON parsing
+
+    # ── Utilities ────────────────────────────────────────────────
+    - path: "pkg/utils/**/*.go"
+      instructions: |
+        Utility functions review:
+        - Sysfs path construction: validate that paths are built safely using
+          filepath.Join and never from raw user input concatenation
+        - PCI address validation: verify regex patterns match the correct
+          D:B:D.f format (e.g., 0000:03:00.0) and reject malformed addresses
+        - VF lookup from MAC/PCI address: handle cases where the device is not found,
+          driver is not loaded, or sysfs entries are missing
+        - Error wrapping: all errors should include context about which device
+          or operation failed
+
+    # ── Shell entrypoint ─────────────────────────────────────────
+    - path: "images/entrypoint.sh"
+      instructions: |
+        Container entrypoint script review:
+        - Verify proper error handling (set -e or explicit checks)
+        - No unsafe variable expansion (quote all variables)
+        - File copy to /opt/cni/bin must preserve correct permissions
+        - Validate the script handles the case where the destination directory
+          does not exist or is read-only
+        - Signal handling: ensure the script properly forwards signals for
+          graceful container shutdown
+
+    # ── Kubernetes manifests ─────────────────────────────────────
+    - path: "**/*.{yaml,yml}"
+      instructions: |
+        If this is a Kubernetes manifest:
+        - securityContext: runAsNonRoot, readOnlyRootFilesystem,
+          allowPrivilegeEscalation: false where applicable
+        - Drop ALL capabilities, add only what is required
+        - Resource limits (cpu, memory) on every container
+        - RBAC: least privilege; no cluster-admin for workloads
+        - Liveness + readiness probes defined where applicable
+        - automountServiceAccountToken: false unless needed
+
+        RDMA CNI DaemonSet specifics:
+        - The init container needs privileged access to copy the CNI binary
+          to the host /opt/cni/bin — verify justification is documented
+        - Volume mount /opt/cni/bin from the host is required for CNI binary
+          installation — verify hostPath type is DirectoryOrCreate
+        - The DaemonSet should tolerate all taints to run on every node
+          that needs RDMA CNI support
+        - Verify image references use proper tags or digests
+
+    # ── Dockerfiles / container images ───────────────────────────
+    - path: "**/{Dockerfile,Containerfile}*"
+      instructions: |
+        Container image security:
+        - Multi-stage builds preferred; no build tools in final image
+        - USER non-root where possible
+        - COPY specific files, not entire context
+        - No secrets in ENV, ARG, or COPY
+        - No package manager cache in final layer
+        - This project has a single Dockerfile (multi-stage: golang:alpine builder
+          → alpine:3 runtime) producing the rdma CNI binary
+        - The final image should be minimal — only the binary and entrypoint script
+
+    # ── Unit tests ───────────────────────────────────────────────
+    - path: "{cmd,pkg}/**/*_test.go"
+      instructions: |
+        Unit test quality (Ginkgo v2 + Gomega):
+        - Use table-driven tests or Ginkgo entries for validation logic with multiple cases
+        - Mock external dependencies using mockery v3 generated mocks
+          (pkg/rdma/mocks/, pkg/cache/mocks/) — do not access real hardware or namespaces
+        - Test error paths, not just happy paths
+        - Verify namespace operations are tested with mock namespace fds
+        - Assertions should include descriptive failure messages
+        - Single responsibility: each It block should test one behavior
+
+    # ── Supply chain & dependencies ──────────────────────────────
+    - path: "**/go.mod"
+      instructions: |
+        Supply chain security:
+        - New dependencies: justify the need, check license compatibility
+        - Pin exact versions; verify no unnecessary indirect dependencies added
+        - Flag known CVEs (cross-ref osv.dev)
+        - Check for replace directives pointing to forks — ensure they are
+          intentional and documented
+        - Key dependencies to monitor for this project:
+          github.com/Mellanox/rdmamap (RDMA device discovery),
+          github.com/vishvananda/netlink (netlink operations),
+          github.com/containernetworking/cni (CNI spec types),
+          github.com/containernetworking/plugins (CNI plugin utilities)
+
+    # ── CI/CD & GitHub Actions ───────────────────────────────────
+    - path: ".github/workflows/**/*"
+      instructions: |
+        CI/CD security:
+        - Pin actions by full SHA, not tag
+        - No secrets in logs; mask sensitive outputs
+        - Least privilege: minimize GITHUB_TOKEN permissions
+        - No pull_request_target with checkout of PR head
+        - Verify CI workflows cover: build, lint (golangci-lint), test,
+          coverage, static analysis (shellcheck, hadolint), and CodeQL
+        - Image build workflows: verify image tags and push targets are correct
+        - Multi-arch builds: verify buildx platforms match deployment targets
+
+    # ── Cryptography files ───────────────────────────────────────
+    - path: "**/*{crypt,cipher,sign,hash,tls,ssl,cert,key,token}*"
+      instructions: |
+        Cryptographic security:
+        - Banned: MD5, SHA1, DES, RC4, 3DES, Blowfish, ECB mode
+        - Symmetric: AES-256-GCM or ChaCha20-Poly1305
+        - Signing: Ed25519 or ECDSA P-256+
+        - Constant-time comparison for all secret/token data
+        - No custom crypto; use vetted libraries only
+
+  # ── Security scanners ────────────────────────────────────────
+  tools:
+    gitleaks:
+      enabled: true
+    semgrep:
+      enabled: true
+    checkov:
+      enabled: true
+    hadolint:
+      enabled: true
+    trivy:
+      enabled: true
+    osvScanner:
+      enabled: true
+    actionlint:
+      enabled: true
+    ast-grep:
+      essential_rules: true
+
+# ── Knowledge base ───────────────────────────────────────────
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/CONTRIBUTING.md"
+  issues:
+    scope: "auto"
+  pull_requests:
+    scope: "auto"
+
+chat:
+  auto_reply: true
+  art: false
