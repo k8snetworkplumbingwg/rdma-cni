@@ -221,7 +221,16 @@ func (plugin *rdmaCniPlugin) CmdAdd(args *skel.CmdArgs) error {
 	state.DeviceID = conf.DeviceID
 	state.SandboxRdmaDevName = rdmaDev
 	state.ContainerRdmaDevName = rdmaDev
-	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
+	pRef, err := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
+	if err != nil {
+		restoreErr := plugin.moveRdmaDevFromNs(rdmaDev, args.Netns)
+		if restoreErr != nil {
+			return fmt.Errorf(
+				"invalid state reference %v, failed while restoring namespace for RDMA device %s. %v",
+				err, rdmaDev, restoreErr)
+		}
+		return fmt.Errorf("invalid state reference: %v", err)
+	}
 	err = plugin.stateCache.Save(pRef, &state)
 	if err != nil {
 		// Move RDMA dev back to current namespace
@@ -260,7 +269,11 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 
 	// Load RDMA device state from cache
 	rdmaState := rdmatypes.RdmaNetState{}
-	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
+	pRef, err := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
+	if err != nil {
+		log.Warn().Msgf("failed to construct state reference, skipping cleanup. %v", err)
+		return nil
+	}
 	err = plugin.stateCache.Load(pRef, &rdmaState)
 	if err != nil {
 		log.Warn().Msgf("failed to load cache entry(%q). it may have been deleted by a previous CMD_DEL call. %v", pRef, err)
@@ -284,20 +297,19 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 // getRDMADevice returns the first RDMA device found for the given deviceID.
 func (plugin *rdmaCniPlugin) getRDMADevice(deviceID string) (string, error) {
 	var rdmaDevs []string
-	if utils.IsPCIAddress(deviceID) {
+	switch {
+	case utils.IsPCIAddress(deviceID):
 		rdmaDevs = plugin.rdmaManager.GetRdmaDevsForPciDev(deviceID)
-		if len(rdmaDevs) == 0 {
-			return "", errors.New("no RDMA devices found")
-		}
-	} else {
+	case utils.IsAuxDevAddress(deviceID):
 		rdmaDevs = plugin.rdmaManager.GetRdmaDevsForAuxDev(deviceID)
-		if len(rdmaDevs) == 0 {
-			return "", errors.New("no RDMA devices found")
-		}
+	default:
+		return "", fmt.Errorf("invalid device ID format: %q", deviceID)
 	}
 
+	if len(rdmaDevs) == 0 {
+		return "", errors.New("no RDMA devices found")
+	}
 	if len(rdmaDevs) != 1 {
-		// Expecting exactly one RDMA device
 		return "", fmt.Errorf(
 			"discovered more than one RDMA device %v. Unsupported state", rdmaDevs)
 	}
