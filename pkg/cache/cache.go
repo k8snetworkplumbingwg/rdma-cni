@@ -21,7 +21,7 @@ type StateRef string
 
 type StateCache interface {
 	// Get State reference identifier for <networkName, containerID, interfaceName>
-	GetStateRef(network string, cid string, ifname string) StateRef
+	GetStateRef(network string, cid string, ifname string) (StateRef, error)
 	// Save state to cache
 	Save(ref StateRef, state interface{}) error
 	// Load state from cache
@@ -40,8 +40,13 @@ type FsStateCache struct {
 	fsOps    FileSystemOps
 }
 
-func (sc *FsStateCache) GetStateRef(network, cid, ifname string) StateRef {
-	return StateRef(strings.Join([]string{network, cid, ifname}, "-"))
+func (sc *FsStateCache) GetStateRef(network, cid, ifname string) (StateRef, error) {
+	for _, component := range []string{network, cid, ifname} {
+		if strings.ContainsAny(component, "/\\") {
+			return "", fmt.Errorf("invalid state ref component: %q", component)
+		}
+	}
+	return StateRef(strings.Join([]string{network, cid, ifname}, "-")), nil
 }
 
 func (sc *FsStateCache) Save(ref StateRef, state interface{}) error {
