@@ -252,6 +252,63 @@ func (_c *MockManager_MoveRdmaDevToNs_Call) RunAndReturn(run func(rdmaDev string
 	return _c
 }
 
+// SetRdmaDevName provides a mock function for the type MockManager
+func (_mock *MockManager) SetRdmaDevName(rdmaDev string, name string) error {
+	ret := _mock.Called(rdmaDev, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetRdmaDevName")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = returnFunc(rdmaDev, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockManager_SetRdmaDevName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetRdmaDevName'
+type MockManager_SetRdmaDevName_Call struct {
+	*mock.Call
+}
+
+// SetRdmaDevName is a helper method to define mock.On call
+//   - rdmaDev string
+//   - name string
+func (_e *MockManager_Expecter) SetRdmaDevName(rdmaDev interface{}, name interface{}) *MockManager_SetRdmaDevName_Call {
+	return &MockManager_SetRdmaDevName_Call{Call: _e.mock.On("SetRdmaDevName", rdmaDev, name)}
+}
+
+func (_c *MockManager_SetRdmaDevName_Call) Run(run func(rdmaDev string, name string)) *MockManager_SetRdmaDevName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockManager_SetRdmaDevName_Call) Return(err error) *MockManager_SetRdmaDevName_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockManager_SetRdmaDevName_Call) RunAndReturn(run func(rdmaDev string, name string) error) *MockManager_SetRdmaDevName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetSystemRdmaMode provides a mock function for the type MockManager
 func (_mock *MockManager) SetSystemRdmaMode(mode string) error {
 	ret := _mock.Called(mode)

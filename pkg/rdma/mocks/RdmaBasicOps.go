@@ -204,6 +204,63 @@ func (_c *MockBasicOps_RdmaLinkByName_Call) RunAndReturn(run func(name string) (
 	return _c
 }
 
+// RdmaLinkSetName provides a mock function for the type MockBasicOps
+func (_mock *MockBasicOps) RdmaLinkSetName(link *netlink.RdmaLink, name string) error {
+	ret := _mock.Called(link, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RdmaLinkSetName")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(*netlink.RdmaLink, string) error); ok {
+		r0 = returnFunc(link, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockBasicOps_RdmaLinkSetName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RdmaLinkSetName'
+type MockBasicOps_RdmaLinkSetName_Call struct {
+	*mock.Call
+}
+
+// RdmaLinkSetName is a helper method to define mock.On call
+//   - link *netlink.RdmaLink
+//   - name string
+func (_e *MockBasicOps_Expecter) RdmaLinkSetName(link interface{}, name interface{}) *MockBasicOps_RdmaLinkSetName_Call {
+	return &MockBasicOps_RdmaLinkSetName_Call{Call: _e.mock.On("RdmaLinkSetName", link, name)}
+}
+
+func (_c *MockBasicOps_RdmaLinkSetName_Call) Run(run func(link *netlink.RdmaLink, name string)) *MockBasicOps_RdmaLinkSetName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 *netlink.RdmaLink
+		if args[0] != nil {
+			arg0 = args[0].(*netlink.RdmaLink)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBasicOps_RdmaLinkSetName_Call) Return(err error) *MockBasicOps_RdmaLinkSetName_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockBasicOps_RdmaLinkSetName_Call) RunAndReturn(run func(link *netlink.RdmaLink, name string) error) *MockBasicOps_RdmaLinkSetName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RdmaLinkSetNsFd provides a mock function for the type MockBasicOps
 func (_mock *MockBasicOps) RdmaLinkSetNsFd(link *netlink.RdmaLink, fd uint32) error {
 	ret := _mock.Called(link, fd)
