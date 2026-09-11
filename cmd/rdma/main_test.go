@@ -235,7 +235,7 @@ var _ = Describe("Main", func() {
 				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
 				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{rdmaDev}, nil)
 				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
-				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"), nil)
 				expectedState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
 				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
 				err := plugin.CmdAdd(&args)
@@ -256,7 +256,7 @@ var _ = Describe("Main", func() {
 				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
 				rdmaMgrMock.On("GetRdmaDevsForAuxDev", auxDev).Return([]string{rdmaDev}, nil)
 				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
-				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"), nil)
 				expectedState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
 				stateCacheMock.On("Save", mock.AnythingOfType("cache.StateRef"), &expectedState).Return(nil)
 				err := plugin.CmdAdd(&args)
@@ -265,7 +265,71 @@ var _ = Describe("Main", func() {
 				stateCacheMock.AssertExpectations(t)
 			})
 		})
-		// TODO(adrian): Add additional tests to cover bad flows / differen network configurations
+		Context("GetStateRef returns error", func() {
+			It("Should restore RDMA device to original namespace and return error", func() {
+				pciDev := "0000:04:00.5"
+				netName := "net/with/slashes"
+				rdmaDev := "mlx5_4"
+				cIfname := "net1"
+				cid := "a1b2c3d4e5f6"
+				cnsPath := "/proc/12444/ns/net"
+				cns, _ := dummyNsMgr.GetNS(cnsPath)
+				curNs, _ := dummyNsMgr.GetCurrentNS()
+				netconf := generateNetConfCmdAdd(netName, cIfname, pciDev)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
+				rdmaMgrMock.On("GetSystemRdmaMode").Return(rdma.RdmaSysModeExclusive, nil)
+				rdmaMgrMock.On("GetRdmaDevsForPciDev", pciDev).Return([]string{rdmaDev}, nil)
+				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, cns).Return(nil)
+				rdmaMgrMock.On("MoveRdmaDevToNs", rdmaDev, curNs).Return(nil)
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(
+					cache.StateRef(""), fmt.Errorf("invalid state ref component: %q", netName))
+				err := plugin.CmdAdd(&args)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("invalid state reference"))
+				rdmaMgrMock.AssertExpectations(t)
+				stateCacheMock.AssertExpectations(t)
+			})
+		})
+	})
+
+	Describe("Test getRDMADevice()", func() {
+		Context("Input validation for non-PCI device IDs", func() {
+			It("Should reject deviceID containing path traversal components", func() {
+				_, err := plugin.getRDMADevice("../../pci/devices/0000:03:00.0")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("invalid device ID"))
+			})
+
+			It("Should reject deviceID containing forward slashes", func() {
+				_, err := plugin.getRDMADevice("foo/bar")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("invalid device ID"))
+			})
+
+			It("Should reject deviceID that is just dot-dot", func() {
+				_, err := plugin.getRDMADevice("..")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("invalid device ID"))
+			})
+
+			It("Should accept valid auxiliary device ID", func() {
+				validAuxDev := "mlx5_core.sf.4"
+				rdmaMgrMock.On("GetRdmaDevsForAuxDev", validAuxDev).Return([]string{"mlx5_0"})
+				dev, err := plugin.getRDMADevice(validAuxDev)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dev).To(Equal("mlx5_0"))
+				rdmaMgrMock.AssertExpectations(t)
+			})
+
+			It("Should accept valid PCI device ID", func() {
+				validPciDev := "0000:04:00.5"
+				rdmaMgrMock.On("GetRdmaDevsForPciDev", validPciDev).Return([]string{"mlx5_0"})
+				dev, err := plugin.getRDMADevice(validPciDev)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dev).To(Equal("mlx5_0"))
+				rdmaMgrMock.AssertExpectations(t)
+			})
+		})
 	})
 
 	Describe("Test CmdDel()", func() {
@@ -281,7 +345,7 @@ var _ = Describe("Main", func() {
 				rdmaState := generateRdmaNetState(pciDev, rdmaDev, rdmaDev)
 				netconf := generateNetConfCmdDel(netName)
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
-				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"), nil)
 				stateCacheMock.On("Load", mock.AnythingOfType("cache.StateRef"),
 					mock.AnythingOfType("*types.RdmaNetState")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*rdmaTypes.RdmaNetState)
@@ -305,7 +369,7 @@ var _ = Describe("Main", func() {
 				rdmaState := generateRdmaNetState(auxDev, rdmaDev, rdmaDev)
 				netconf := generateNetConfCmdDel(netName)
 				args := generateArgs(cnsPath, cid, cIfname, &netconf)
-				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"))
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(cache.StateRef("some-ref"), nil)
 				stateCacheMock.On("Load", mock.AnythingOfType("cache.StateRef"),
 					mock.AnythingOfType("*types.RdmaNetState")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*rdmaTypes.RdmaNetState)
@@ -319,7 +383,23 @@ var _ = Describe("Main", func() {
 				stateCacheMock.AssertExpectations(t)
 			})
 		})
-		// TODO(adrian): Add additional tests to cover bad flows / different network configurations
+		Context("GetStateRef returns error", func() {
+			It("Should return nil without attempting cleanup", func() {
+				netName := "net/with/slashes"
+				cIfname := "net1"
+				cid := "a1b2c3d4e5f6"
+				cnsPath := "/proc/12444/ns/net"
+				netconf := generateNetConfCmdDel(netName)
+				args := generateArgs(cnsPath, cid, cIfname, &netconf)
+				stateCacheMock.On("GetStateRef", netName, cid, cIfname).Return(
+					cache.StateRef(""), fmt.Errorf("invalid state ref component: %q", netName))
+				err := plugin.CmdDel(&args)
+				Expect(err).ToNot(HaveOccurred())
+				stateCacheMock.AssertExpectations(t)
+				stateCacheMock.AssertNotCalled(t, "Load")
+				stateCacheMock.AssertNotCalled(t, "Delete")
+			})
+		})
 	})
 
 	Describe("Test CmdCheck()", func() {
