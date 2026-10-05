@@ -90,14 +90,14 @@ Set RDMA subsystem namespace awareness mode to `exclusive` via rdma tool:
 
 ## Deploy RDMA CNI
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/deployment/rdma-cni-daemonset.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.6.0/deployment/rdma-cni-daemonset.yaml
 ```
 
 ## Deploy workload
 Pod definition can be found in the example below.
 The example uses `generateName`, so use `kubectl create` to create a Pod with a unique name.
 ```bash
-$ kubectl create -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/examples/rdma_test_pod.yaml
+$ kubectl create -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.6.0/examples/rdma_test_pod.yaml
 ```
 
 ## Example resource
