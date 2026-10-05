@@ -90,20 +90,21 @@ Set RDMA subsystem namespace awareness mode to `exclusive` via rdma tool:
 
 ## Deploy RDMA CNI
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/deployment/rdma-cni-daemonset.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.6.0/deployment/rdma-cni-daemonset.yaml
 ```
 
 ## Deploy workload
 Pod definition can be found in the example below.
+The example uses `generateName`, so use `kubectl create` to create a Pod with a unique name.
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.5.0/examples/rdma_test_pod.yaml
+$ kubectl create -f https://raw.githubusercontent.com/k8snetworkplumbingwg/rdma-cni/refs/tags/v1.6.0/examples/rdma_test_pod.yaml
 ```
 
 ## Example resource
 
-- [Pod](./examples/my_rdma_test_pod.yaml): test workload
+- [Pod](./examples/rdma_test_pod.yaml): test workload
 - [SR-IOV Network Device Plugin ConfigMap](./examples/sriov_dp_rdma_resource.yaml): defines an RDMA enabled SR-IOV resource pool named: mellanox.com/sriov_rdma
-- [Network CRD](./examples/rdma_net_crd.yaml):  defines a network, `sriov-network`, associated with an rdma enabled resurce, `mellanox.com/sriov_rdma`. The CNI plugins that will be executed in a chain are for Pods that request this network are: _sriov_, _rdma_ CNIs
+- [Network CRD](./examples/rdma_net_crd.yaml):  defines a network, `sriov-rdma-net`, associated with an rdma enabled resurce, `mellanox.com/sriov_rdma`. The CNI plugins that will be executed in a chain are for Pods that request this network are: _sriov_, _rdma_ CNIs
 
 # Development
 It is recommended to use the same go version as defined in `.travis.yml`
