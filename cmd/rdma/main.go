@@ -158,7 +158,7 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev, nsPath string) error {
 		return plugin.rdmaManager.MoveRdmaDevToNs(rdmaDev, targetNs)
 	})
 	if err != nil {
-		return fmt.Errorf("failed to move RDMA device %s to default namespace. %v", rdmaDev, err)
+		return fmt.Errorf("failed to move RDMA device %s to default namespace: %w", rdmaDev, err)
 	}
 	return err
 }
@@ -252,12 +252,6 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 	}
 	log.Debug().Msgf("CmdDel() args: %v ", args)
 
-	// Container already exited, so no Namespace. if no Namespace, we got nothing to clean.
-	// this may happen in Infra containers as described in https://github.com/kubernetes/kubernetes/pull/35240
-	if args.Netns == "" {
-		return nil
-	}
-
 	// Load RDMA device state from cache
 	rdmaState := rdmatypes.RdmaNetState{}
 	pRef := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
@@ -267,16 +261,19 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 		return nil
 	}
 
-	// Move RDMA device to default namespace
-	err = plugin.moveRdmaDevFromNs(rdmaState.ContainerRdmaDevName, args.Netns)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to restore RDMA device %s to default namespace. %v", rdmaState.ContainerRdmaDevName, err)
+	// An exited container may no longer have a namespace, but its cached state
+	// still needs to be removed.
+	if args.Netns != "" {
+		err = plugin.moveRdmaDevFromNs(rdmaState.ContainerRdmaDevName, args.Netns)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to restore RDMA device %s to default namespace: %w", rdmaState.ContainerRdmaDevName, err)
+		}
 	}
 
 	err = plugin.stateCache.Delete(pRef)
 	if err != nil {
-		log.Warn().Msgf("failed to delete cache entry(%q). %v", pRef, err)
+		return fmt.Errorf("failed to delete cache entry(%q): %w", pRef, err)
 	}
 	return nil
 }
