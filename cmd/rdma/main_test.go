@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -269,6 +272,64 @@ var _ = Describe("Main", func() {
 	})
 
 	Describe("Test CmdDel()", func() {
+		It("removes cached state when the container namespace is already gone", func() {
+			originalCacheDir := cache.CacheDir
+			cache.CacheDir = GinkgoT().TempDir()
+			DeferCleanup(func() { cache.CacheDir = originalCacheDir })
+			plugin.stateCache = cache.NewStateCache()
+			plugin.nsManager = nil
+			plugin.rdmaManager = nil
+			conf := generateNetConfCmdDel("rdma-net")
+			args := generateArgs("", "container-1", "net1", &conf)
+			ref := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
+			state := generateRdmaNetState("0000:04:00.5", "mlx5_4", "mlx5_4")
+			Expect(plugin.stateCache.Save(ref, &state)).To(Succeed())
+
+			Expect(plugin.CmdDel(&args)).To(Succeed())
+			_, err := os.Stat(filepath.Join(cache.CacheDir, string(ref)))
+			Expect(os.IsNotExist(err)).To(BeTrue(), "DEL must remove the cached network state")
+			Expect(plugin.CmdDel(&args)).To(Succeed())
+		})
+
+		It("returns cache deletion failures when the namespace is already gone", func() {
+			conf := generateNetConfCmdDel("rdma-cleanup-failure")
+			args := generateArgs("", "container-1", "net1", &conf)
+			ref := cache.StateRef("some-ref")
+			deleteErr := fmt.Errorf("cache is read-only")
+			stateCacheMock.On("GetStateRef", conf.Name, args.ContainerID, args.IfName).Return(ref)
+			stateCacheMock.On("Load", ref, mock.Anything).Return(nil)
+			stateCacheMock.On("Delete", ref).Return(deleteErr)
+
+			err := plugin.CmdDel(&args)
+			Expect(err).To(MatchError(ContainSubstring("failed to delete cache entry")),
+				"DEL must report cache deletion failures")
+			Expect(errors.Is(err, deleteErr)).To(BeTrue(), "DEL must preserve the cache deletion error chain")
+			Expect(stateCacheMock.AssertExpectations(GinkgoT())).To(BeTrue(), "DEL must perform the expected cache operations")
+		})
+
+		It("preserves cached state when restoring the RDMA device fails", func() {
+			conf := generateNetConfCmdDel("rdma-net")
+			args := generateArgs("/proc/12444/ns/net", "container-1", "net1", &conf)
+			ref := cache.StateRef("some-ref")
+			state := generateRdmaNetState("0000:04:00.5", "mlx5_4", "mlx5_4")
+			stateCacheMock.On("GetStateRef", conf.Name, args.ContainerID, args.IfName).Return(ref)
+			stateCacheMock.On("Load", ref, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+				*args.Get(1).(*rdmaTypes.RdmaNetState) = state
+			})
+			targetNs, err := dummyNsMgr.GetCurrentNS()
+			Expect(err).NotTo(HaveOccurred(), "the restore failure fixture must provide the default namespace")
+			restoreErr := errors.New("restore failed")
+			rdmaMgrMock.On("MoveRdmaDevToNs", state.ContainerRdmaDevName, targetNs).Return(restoreErr)
+
+			err = plugin.CmdDel(&args)
+			Expect(err).To(MatchError(ContainSubstring("restore failed")), "DEL must report device restoration failures")
+			Expect(errors.Is(err, restoreErr)).To(BeTrue(), "DEL must preserve the device restoration error chain")
+			Expect(stateCacheMock.AssertNotCalled(GinkgoT(), "Delete", mock.Anything)).To(BeTrue(),
+				"DEL must retain cached state when device restoration fails")
+			Expect(stateCacheMock.AssertExpectations(GinkgoT())).To(BeTrue(), "DEL must perform the expected cache operations")
+			Expect(rdmaMgrMock.AssertExpectations(GinkgoT())).To(BeTrue(), "DEL must attempt to restore the RDMA device")
+		})
+
 		Context("Valid configuration provided", func() {
 			It("Should succeed and move Rdma device associated with PCI net device back to sandbox namespace", func() {
 				pciDev := "0000:04:00.5"
