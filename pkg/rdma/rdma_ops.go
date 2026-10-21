@@ -19,6 +19,8 @@ type BasicOps interface {
 	GetRdmaDevicesForPcidev(pcidevName string) []string
 	// Equivalent to rdmamap.GetRdmaDevicesForAuxdev(...)
 	GetRdmaDevicesForAuxdev(auxDev string) []string
+	// Equivalent to netlink.RdmaLinkSetName(...)
+	RdmaLinkSetName(link *netlink.RdmaLink, name string) error
 }
 
 func newRdmaBasicOps() BasicOps {
@@ -56,4 +58,9 @@ func (rdma *rdmaBasicOpsImpl) GetRdmaDevicesForPcidev(pcidevName string) []strin
 // Equivalent to rdmamap.GetRdmaDevicesForAuxdev(...)
 func (rdma *rdmaBasicOpsImpl) GetRdmaDevicesForAuxdev(auxDev string) []string {
 	return rdmamap.GetRdmaDevicesForAuxdev(auxDev)
+}
+
+// Equivalent to netlink.RdmaLinkSetName(...)
+func (rdma *rdmaBasicOpsImpl) RdmaLinkSetName(link *netlink.RdmaLink, name string) error {
+	return netlink.RdmaLinkSetName(link, name)
 }
