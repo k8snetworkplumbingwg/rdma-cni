@@ -48,8 +48,18 @@ func GetVfPciDevFromMAC(mac string) (string, error) {
 	return dev, err
 }
 
+var pciAddressRegex = regexp.MustCompile(`^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-7]$`)
+
+// Matches the kernel auxiliary bus naming convention: <KBUILD_MODNAME>.<name>.<id>
+// constructed via dev_set_name("%s.%s.%d", modname, auxdev->name, auxdev->id).
+var auxDevRegex = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.\d+$`)
+
 // IsPCIAddress returns whether the input is a valid PCI address.
 func IsPCIAddress(pciAddress string) bool {
-	re := regexp.MustCompile(`^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-7]$`)
-	return re.MatchString(pciAddress)
+	return pciAddressRegex.MatchString(pciAddress)
+}
+
+// IsAuxDevAddress returns whether the input matches the kernel auxiliary bus device naming convention.
+func IsAuxDevAddress(auxDev string) bool {
+	return auxDevRegex.MatchString(auxDev)
 }
