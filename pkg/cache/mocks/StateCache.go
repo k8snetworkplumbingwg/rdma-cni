@@ -88,7 +88,7 @@ func (_c *MockStateCache_Delete_Call) RunAndReturn(run func(ref cache.StateRef) 
 }
 
 // GetStateRef provides a mock function for the type MockStateCache
-func (_mock *MockStateCache) GetStateRef(network string, cid string, ifname string) cache.StateRef {
+func (_mock *MockStateCache) GetStateRef(network string, cid string, ifname string) (cache.StateRef, error) {
 	ret := _mock.Called(network, cid, ifname)
 
 	if len(ret) == 0 {
@@ -96,12 +96,21 @@ func (_mock *MockStateCache) GetStateRef(network string, cid string, ifname stri
 	}
 
 	var r0 cache.StateRef
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string, string, string) (cache.StateRef, error)); ok {
+		return returnFunc(network, cid, ifname)
+	}
 	if returnFunc, ok := ret.Get(0).(func(string, string, string) cache.StateRef); ok {
 		r0 = returnFunc(network, cid, ifname)
 	} else {
 		r0 = ret.Get(0).(cache.StateRef)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = returnFunc(network, cid, ifname)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // MockStateCache_GetStateRef_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStateRef'
@@ -140,12 +149,12 @@ func (_c *MockStateCache_GetStateRef_Call) Run(run func(network string, cid stri
 	return _c
 }
 
-func (_c *MockStateCache_GetStateRef_Call) Return(stateRef cache.StateRef) *MockStateCache_GetStateRef_Call {
-	_c.Call.Return(stateRef)
+func (_c *MockStateCache_GetStateRef_Call) Return(stateRef cache.StateRef, err error) *MockStateCache_GetStateRef_Call {
+	_c.Call.Return(stateRef, err)
 	return _c
 }
 
-func (_c *MockStateCache_GetStateRef_Call) RunAndReturn(run func(network string, cid string, ifname string) cache.StateRef) *MockStateCache_GetStateRef_Call {
+func (_c *MockStateCache_GetStateRef_Call) RunAndReturn(run func(network string, cid string, ifname string) (cache.StateRef, error)) *MockStateCache_GetStateRef_Call {
 	_c.Call.Return(run)
 	return _c
 }
