@@ -143,7 +143,7 @@ func (plugin *rdmaCniPlugin) moveRdmaDevFromNs(rdmaDev, nsPath string) error {
 
 	sourceNs, err := plugin.nsManager.GetNS(nsPath)
 	if err != nil {
-		return fmt.Errorf("failed to open network namespace %s: %v", nsPath, err)
+		return fmt.Errorf("failed to open network namespace %s: %w", nsPath, err)
 	}
 	defer sourceNs.Close()
 
@@ -261,11 +261,12 @@ func (plugin *rdmaCniPlugin) CmdDel(args *skel.CmdArgs) error {
 		return nil
 	}
 
-	// An exited container may no longer have a namespace, but its cached state
-	// still needs to be removed.
+	// DEL must remove cached state even when the namespace is gone and its
+	// path is still set.
 	if args.Netns != "" {
 		err = plugin.moveRdmaDevFromNs(rdmaState.ContainerRdmaDevName, args.Netns)
-		if err != nil {
+		var missingNamespace ns.NSPathNotExistErr
+		if err != nil && !errors.As(err, &missingNamespace) {
 			return fmt.Errorf(
 				"failed to restore RDMA device %s to default namespace: %w", rdmaState.ContainerRdmaDevName, err)
 		}
