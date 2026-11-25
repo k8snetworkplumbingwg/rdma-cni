@@ -272,15 +272,19 @@ var _ = Describe("Main", func() {
 	})
 
 	Describe("Test CmdDel()", func() {
-		It("removes cached state when the container namespace is already gone", func() {
+		DescribeTable("removes cached state when the container namespace is already gone", func(hasNamespacePath bool) {
 			originalCacheDir := cache.CacheDir
 			cache.CacheDir = GinkgoT().TempDir()
 			DeferCleanup(func() { cache.CacheDir = originalCacheDir })
 			plugin.stateCache = cache.NewStateCache()
 			plugin.nsManager = nil
-			plugin.rdmaManager = nil
+			nsPath := ""
+			if hasNamespacePath {
+				plugin.nsManager = newNsManager()
+				nsPath = filepath.Join(GinkgoT().TempDir(), "missing-netns")
+			}
 			conf := generateNetConfCmdDel("rdma-net")
-			args := generateArgs("", "container-1", "net1", &conf)
+			args := generateArgs(nsPath, "container-1", "net1", &conf)
 			ref := plugin.stateCache.GetStateRef(conf.Name, args.ContainerID, args.IfName)
 			state := generateRdmaNetState("0000:04:00.5", "mlx5_4", "mlx5_4")
 			Expect(plugin.stateCache.Save(ref, &state)).To(Succeed())
@@ -289,7 +293,10 @@ var _ = Describe("Main", func() {
 			_, err := os.Stat(filepath.Join(cache.CacheDir, string(ref)))
 			Expect(os.IsNotExist(err)).To(BeTrue(), "DEL must remove the cached network state")
 			Expect(plugin.CmdDel(&args)).To(Succeed())
-		})
+		},
+			Entry("with an empty path", false),
+			Entry("with a missing path", true),
+		)
 
 		It("keeps DEL successful when cache deletion fails after the namespace is gone", func() {
 			conf := generateNetConfCmdDel("rdma-cleanup-failure")
